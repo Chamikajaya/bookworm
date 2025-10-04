@@ -1,0 +1,23 @@
+{
+  "name": "novel-nest-serverless",
+  "version": "1.0.0",
+  "description": "A serverless backend for a book store ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Chamika Jayasinghe",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.155",
+    "@types/node": "^24.6.2",
+    "serverless-plugin-typescript": "^2.1.5",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.902.0",
+    "@aws-sdk/lib-dynamodb": "^3.902.0",
+    "aws-lambda": "^1.0.7",
+    "zod": "^4.1.11"
+  }
+}
