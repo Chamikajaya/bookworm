@@ -20,6 +20,7 @@ export async function handler(
       minPrice: event.queryStringParameters?.minPrice
         ? parseFloat(event.queryStringParameters.minPrice)
         : undefined,
+
       maxPrice: event.queryStringParameters?.maxPrice
         ? parseFloat(event.queryStringParameters.maxPrice)
         : undefined,

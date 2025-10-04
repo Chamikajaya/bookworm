@@ -9,8 +9,9 @@ provider:
   timeout: 29
   environment:
     BOOKS_TABLE: ${self:service}-books-table-${self:provider.stage}
+    BOOK_COVERS_BUCKET: ${self:service}-book-covers-bucket-${self:provider.stage}
     # AWS_REGION: ${self:provider.region}
-    # TODO: Add frotnend URL for CORS if needed
+    # TODO: Add frotnend URL for CORS
 
   iam:
     role:
@@ -46,6 +47,15 @@ functions:
           path: /books/{id}
           cors: true
 
+  createBook:
+    handler: src/handlers/books/createBook.handler
+    description: Create a new book - ADMIN
+    events:
+      - http:
+          method: post
+          path: /books
+          cors: true # ! TODO: For now cors is true, later change to specific domain
+
 resources:
   Resources:
     # DynamoDB Tables
@@ -60,6 +70,44 @@ resources:
         KeySchema:
           - AttributeName: id
             KeyType: HASH
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    # S3 Bucket for Book Cover Images
+    BookCoversBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:provider.environment.BOOK_COVERS_BUCKET}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - ServerSideEncryptionByDefault:
+                SSEAlgorithm: AES256
+        VersioningConfiguration:
+          Status: Enabled
+        LifecycleConfiguration:
+          Rules:
+            - Id: DeleteOldVersions
+              Status: Enabled
+              NoncurrentVersionExpirationInDays: 30
+        CorsConfiguration:
+          CorsRules:
+            - AllowedHeaders:
+                - "*"
+              AllowedMethods:
+                - GET
+                - PUT
+                - HEAD
+              AllowedOrigins:
+                - "*"
+              MaxAge: 3000
         Tags:
           - Key: Environment
             Value: ${self:provider.stage}
