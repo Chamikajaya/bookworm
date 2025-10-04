@@ -1,4 +1,5 @@
-// ! TODO: Update serverless.yml as well accordingly
+// ! getAll should be implemented in a way that it supports search by title as well
+// TODO: Implement pagination for getAll
 
 import {
   DynamoDBDocumentClient,
@@ -7,16 +8,134 @@ import {
   UpdateCommand,
   DeleteCommand,
   ScanCommand,
+  ScanCommandInput,
 } from "@aws-sdk/lib-dynamodb";
 
 import { getDynamoDBClient } from "../config/dynamodb";
+import { Book } from "../types/book";
+import { DatabaseError, NotFoundError } from "../utils/errors";
+import { BookSearchParams, PaginatedResponse } from "../types/pagination";
 
-export class BookService {
+class BookService {
   private docClient: DynamoDBDocumentClient;
   private tableName: string;
 
   constructor() {
     this.docClient = getDynamoDBClient();
-    this.tableName = process.env.BOOKS_TABLE;
+    this.tableName = process.env.BOOKS_TABLE!;
+  }
+
+  async getBookById(bookId: string): Promise<Book> {
+    try {
+      const command = new GetCommand({
+        TableName: this.tableName,
+        Key: { bookId },
+      });
+
+      const result = await this.docClient.send(command);
+      if (!result.Item) {
+        throw new NotFoundError(`Book with ID ${bookId} not found`);
+      }
+      return result.Item as Book;
+    } catch (error) {
+      if (error instanceof NotFoundError) throw error;
+      throw new DatabaseError(
+        `Failed to retrieve book: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  async searchBooks(
+    params: BookSearchParams
+  ): Promise<PaginatedResponse<Book>> {
+    try {
+      const {
+        title,
+        author,
+        category,
+        minPrice,
+        maxPrice,
+        limit = 10,
+        lastEvaluatedKey,
+      } = params;
+
+      // Build filter expression dynamically
+      const filterExpressions: string[] = [];
+      const expressionAttributeNames: Record<string, string> = {};
+      const expressionAttributeValues: Record<string, any> = {};
+
+      if (title) {
+        filterExpressions.push("contains(#title, :title)");
+        expressionAttributeNames["#title"] = "title";
+        expressionAttributeValues[":title"] = title;
+      }
+
+      if (author) {
+        filterExpressions.push("contains(#author, :author)");
+        expressionAttributeNames["#author"] = "author";
+        expressionAttributeValues[":author"] = author;
+      }
+
+      if (category) {
+        filterExpressions.push("#category = :category");
+        expressionAttributeNames["#category"] = "category";
+        expressionAttributeValues[":category"] = category;
+      }
+
+      if (minPrice !== undefined) {
+        filterExpressions.push("#price >= :minPrice");
+        expressionAttributeNames["#price"] = "price";
+        expressionAttributeValues[":minPrice"] = minPrice;
+      }
+      if (maxPrice !== undefined) {
+        filterExpressions.push("#price <= :maxPrice");
+        expressionAttributeNames["#price"] = "price";
+        expressionAttributeValues[":maxPrice"] = maxPrice;
+      }
+
+      const scanInput: ScanCommandInput = {
+        TableName: this.tableName,
+        Limit: limit,
+      };
+
+      if (filterExpressions.length > 0) {
+        scanInput.FilterExpression = filterExpressions.join(" AND ");
+        scanInput.ExpressionAttributeNames = expressionAttributeNames;
+        scanInput.ExpressionAttributeValues = expressionAttributeValues;
+      }
+      // decoding the lastEvaluatedKey from base64 string to object as expected by DynamoDB
+      if (lastEvaluatedKey) {
+        scanInput.ExclusiveStartKey = JSON.parse(
+          Buffer.from(lastEvaluatedKey, "base64").toString()
+        );
+      }
+
+      const command = new ScanCommand(scanInput);
+      const result = await this.docClient.send(command);
+
+      // encoding the LastEvaluatedKey to base64 string for safe transport
+      const lastKey = result.LastEvaluatedKey
+        ? Buffer.from(JSON.stringify(result.LastEvaluatedKey)).toString(
+            "base64"
+          )
+        : undefined;
+
+      return {
+        items: (result.Items || []) as Book[],
+        count: result.Count || 0,
+        lastEvaluatedKey: lastKey,
+        hasMore: !!result.LastEvaluatedKey,
+      };
+    } catch (error) {
+      throw new DatabaseError(
+        `Failed to search books: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
   }
 }
+
+export const bookService = new BookService();

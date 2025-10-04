@@ -1,7 +1,4 @@
-service: novel-nest
-
-plugins:
-  - serverless-plugin-typescript
+service: bookworm
 
 provider:
   name: aws
@@ -9,12 +6,30 @@ provider:
   region: ${opt:region, 'us-east-1'}
   stage: ${opt:stage, 'dev'}
   memorySize: 512
-  timeout: 30
+  timeout: 29
+  environment:
+    BOOKS_TABLE: ${self:service}-books-table-${self:provider.stage}
+    # AWS_REGION: ${self:provider.region}
+    # TODO: Add frotnend URL for CORS if needed
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Scan
+            - dynamodb:Query
+          Resource:
+            - !GetAtt BooksTable.Arn
 
 functions:
   # Book Related Endpoints
   getAllBooks:
-    handler: src/handlers/getAllBooks.handler
+    handler: src/handlers/books/getAllBooks.handler
     description: Get all books
     events:
       - http:
@@ -23,10 +38,30 @@ functions:
           cors: true # makes API Gateway return the CORS response headers
 
   getBookById:
-    handler: src/handlers/getBookById.handler
+    handler: src/handlers/books/getBookById.handler
     description: Get a book by ID
     events:
       - http:
           method: get
           path: /books/{id}
           cors: true
+
+resources:
+  Resources:
+    # DynamoDB Tables
+    BooksTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.BOOKS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
