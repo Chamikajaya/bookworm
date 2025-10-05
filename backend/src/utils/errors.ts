@@ -18,6 +18,12 @@ export class DatabaseError extends Error {
     this.name = "DatabaseError";
   }
 }
+export class S3Error extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "S3Error";
+  }
+}
 
 export class InternalServerError extends Error {
   constructor(message: string) {

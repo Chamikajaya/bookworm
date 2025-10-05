@@ -11,7 +11,12 @@ import { v4 as uuidv4 } from "uuid";
 
 import { getDynamoDBClient } from "../config/dynamodb";
 import { Book, CreateBookInput } from "../types/book";
-import { DatabaseError, NotFoundError } from "../utils/errors";
+import {
+  DatabaseError,
+  NotFoundError,
+  S3Error,
+  ValidationError,
+} from "../utils/errors";
 import { BookSearchParams, PaginatedResponse } from "../types/pagination";
 import { S3Service, s3Service } from "./s3Service";
 
@@ -26,6 +31,7 @@ class BookService {
     this.s3Service = s3Service;
   }
 
+  // ! TODO: Migrate to QUERY with GSIs instead of SCAN
   async getBookById(bookId: string): Promise<Book> {
     try {
       const command = new GetCommand({
@@ -109,6 +115,36 @@ class BookService {
       if (error instanceof NotFoundError) throw error;
       throw new DatabaseError(
         `Failed to delete book: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  async generateCoverImageUploadUrl(
+    bookId: string,
+    fileExtension: string,
+    contentType: string
+  ): Promise<{ uploadUrl: string; key: string }> {
+    try {
+      if (!this.s3Service.validateImageFile(fileExtension, contentType)) {
+        throw new ValidationError(
+          "Invalid image file type. Supported types: jpg, jpeg, png, webp, gif"
+        );
+      }
+
+      await this.getBookById(bookId); // this will throw NotFoundError
+
+      return await this.s3Service.generatePresignedUrlForUpload(
+        bookId,
+        fileExtension,
+        contentType
+      );
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError)
+        throw error;
+      throw new S3Error(
+        `Failed to generate upload URL: ${
           error instanceof Error ? error.message : String(error)
         }`
       );

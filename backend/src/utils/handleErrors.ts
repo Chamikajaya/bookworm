@@ -5,6 +5,7 @@ import {
   ValidationError,
   DatabaseError,
   InternalServerError,
+  S3Error,
 } from "./errors";
 import { logger } from "../config/logger";
 
@@ -24,6 +25,9 @@ export const handleError = (
 
   if (error instanceof DatabaseError) {
     return errorResponse("Database Error", 503, error.message);
+  }
+  if (error instanceof S3Error) {
+    return errorResponse("S3 Error", 500, error.message);
   }
 
   if (error instanceof InternalServerError) {
