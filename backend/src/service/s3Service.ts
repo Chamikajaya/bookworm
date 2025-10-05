@@ -9,7 +9,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { getS3Client } from "../config/s3";
 import { logger } from "../config/logger";
 
-class s3Service {
+export class S3Service {
   private s3Client: S3Client;
   private bucketName: string;
   private urlExpTime: number;
@@ -82,3 +82,5 @@ class s3Service {
     );
   }
 }
+
+export const s3Service = new S3Service();

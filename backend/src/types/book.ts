@@ -1,3 +1,5 @@
+// properties related to book cover ?
+
 export interface Book {
   id: string;
   title: string;
@@ -11,6 +13,8 @@ export interface Book {
   pageCount?: number;
   price: number;
   stockQuantity: number;
+  coverImageKey?: string;
+  coverImageUrl?: string; // URL to access the cover image  - generated when needed
   createdAt: string;
   updatedAt: string;
 }
@@ -27,6 +31,7 @@ export interface CreateBookInput {
   pageCount?: number;
   price: number;
   stockQuantity: number;
+  coverImageKey?: string;
 }
 
 export interface UpdateBookInput {
@@ -41,6 +46,7 @@ export interface UpdateBookInput {
   category?: BookCategory;
   price?: number;
   stockQuantity?: number;
+  coverImageKey?: string;
 }
 
 export enum BookCategory {

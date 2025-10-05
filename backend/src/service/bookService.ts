@@ -10,26 +10,30 @@ import {
   ScanCommand,
   ScanCommandInput,
 } from "@aws-sdk/lib-dynamodb";
+import { v4 as uuidv4 } from "uuid";
 
 import { getDynamoDBClient } from "../config/dynamodb";
-import { Book } from "../types/book";
+import { Book, CreateBookInput } from "../types/book";
 import { DatabaseError, NotFoundError } from "../utils/errors";
 import { BookSearchParams, PaginatedResponse } from "../types/pagination";
+import { S3Service, s3Service } from "./s3Service";
 
 class BookService {
   private docClient: DynamoDBDocumentClient;
   private tableName: string;
+  private s3Service: S3Service;
 
   constructor() {
     this.docClient = getDynamoDBClient();
     this.tableName = process.env.BOOKS_TABLE!;
+    this.s3Service = s3Service;
   }
 
   async getBookById(bookId: string): Promise<Book> {
     try {
       const command = new GetCommand({
         TableName: this.tableName,
-        Key: { bookId },
+        Key: { id: bookId },
       });
 
       const result = await this.docClient.send(command);
@@ -131,6 +135,48 @@ class BookService {
     } catch (error) {
       throw new DatabaseError(
         `Failed to search books: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+  // TODO: Similar error handling
+  async createBook(input: CreateBookInput): Promise<Book> {
+    try {
+      const timestamp = new Date().toISOString();
+      const book: Book = {
+        id: uuidv4(),
+        title: input.title,
+        description: input.description,
+        author: input.author,
+        isbn: input.isbn,
+        publisher: input.publisher,
+        publishedYear: input.publishedYear,
+        language: input.language || "English",
+        pageCount: input.pageCount,
+        category: input.category,
+        price: input.price,
+        stockQuantity: input.stockQuantity ?? 0,
+        coverImageKey: input.coverImageKey,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      };
+      const command = new PutCommand({
+        TableName: this.tableName,
+        Item: book,
+      });
+      await this.docClient.send(command);
+
+      // generating the presigned URL if coverImageKey is provided
+      if (book.coverImageKey) {
+        book.coverImageUrl = await this.s3Service.generatePresignedUrlForView(
+          book.coverImageKey
+        );
+      }
+      return book;
+    } catch (error) {
+      throw new DatabaseError(
+        `Failed to create book: ${
           error instanceof Error ? error.message : String(error)
         }`
       );

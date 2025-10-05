@@ -26,7 +26,7 @@ export async function handler(
         : undefined,
       limit: event.queryStringParameters?.limit
         ? parseInt(event.queryStringParameters.limit)
-        : 20,
+        : 10,
       lastEvaluatedKey: event.queryStringParameters?.lastKey,
     };
 
