@@ -63,7 +63,7 @@ class BookService {
     }
   }
 
-  async createBook(input: CreateBookInput): Promise<Book> {
+  async createBook(input: CreateBookInput): Promise<void> {
     try {
       const timestamp = new Date().toISOString();
       const book: Book = {
@@ -88,15 +88,6 @@ class BookService {
         Item: book,
       });
       await this.docClient.send(command);
-
-      // generating the presigned URL if coverImageKey is provided
-      if (book.coverImageKey) {
-        book.coverImageUrl = await this.s3Service.generatePresignedUrlForView(
-          book.coverImageKey
-        );
-      }
-
-      return book;
     } catch (error) {
       throw new DatabaseError(
         `Failed to create book: ${
@@ -131,7 +122,7 @@ class BookService {
     }
   }
 
-  async updateBook(bookId: string, input: UpdateBookInput): Promise<Book> {
+  async updateBook(bookId: string, input: UpdateBookInput): Promise<void> {
     try {
       const existingBook: Book = await this.getBookById(bookId);
       if (!existingBook) {
@@ -190,17 +181,7 @@ class BookService {
         ReturnValues: "ALL_NEW",
       });
 
-      const result = await this.docClient.send(command);
-      const updatedBook = result.Attributes as Book;
-
-      // generating the presigned URL if coverImageKey is provided
-      if (updatedBook.coverImageKey) {
-        updatedBook.coverImageUrl =
-          await this.s3Service.generatePresignedUrlForView(
-            updatedBook.coverImageKey
-          );
-      }
-      return updatedBook;
+      await this.docClient.send(command);
     } catch (error) {
       if (error instanceof NotFoundError) throw error;
       throw new DatabaseError(
@@ -306,20 +287,13 @@ class BookService {
       // Generate presigned URLs for all books with cover images
       const books = (result.Items || []) as Book[];
       await Promise.all(
+        // Promise.all is used to run the async operations in parallel
         books.map(async (book) => {
           if (book.coverImageKey) {
-            try {
-              book.coverImageUrl =
-                await this.s3Service.generatePresignedUrlForView(
-                  book.coverImageKey
-                );
-            } catch (error) {
-              // Log error but don't fail the entire request
-              console.error(
-                `Failed to generate URL for book ${book.id}:`,
-                error
+            book.coverImageUrl =
+              await this.s3Service.generatePresignedUrlForView(
+                book.coverImageKey
               );
-            }
           }
         })
       );

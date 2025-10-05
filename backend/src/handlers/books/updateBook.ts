@@ -41,12 +41,9 @@ export async function handler(
     }
 
     // Update book
-    const updatedBook = await bookService.updateBook(
-      bookId,
-      validationResult.data
-    );
+    await bookService.updateBook(bookId, validationResult.data);
 
-    return successResponse(updatedBook, "Book updated successfully", 200);
+    return successResponse({}, "Book updated successfully", 200);
   } catch (error) {
     return handleError(error, "updateBook");
   }

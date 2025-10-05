@@ -1,5 +1,12 @@
+import { ModeToggle } from "./components/ModeToggle";
+
 function App() {
-  return <h1 className="text-3xl font-bold">Hello World</h1>;
+  return (
+    <>
+      <h1 className="font-extrabold">BookWorm</h1>
+      <ModeToggle />
+    </>
+  );
 }
 
 export default App;

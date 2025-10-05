@@ -86,6 +86,7 @@ functions:
           method: post
           path: /books/{id}/upload-url
           cors: true # ! TODO: For now cors is true, later change to specific domain
+
   updateBook:
     handler: src/handlers/books/updateBook.handler
     description: "Update a book - ADMIN"
