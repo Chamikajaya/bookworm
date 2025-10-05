@@ -10,7 +10,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 
 import { getDynamoDBClient } from "../config/dynamodb";
-import { Book, CreateBookInput } from "../types/book";
+import { Book, CreateBookInput, UpdateBookInput } from "../types/book";
 import {
   DatabaseError,
   NotFoundError,
@@ -81,13 +81,18 @@ class BookService {
       await this.docClient.send(command);
 
       // generating the presigned URL if coverImageKey is provided
-      if (book.coverImageKey) {
-        book.coverImageUrl = await this.s3Service.generatePresignedUrlForView(
-          book.coverImageKey
-        );
+      try {
+        if (book.coverImageKey) {
+          book.coverImageUrl = await this.s3Service.generatePresignedUrlForView(
+            book.coverImageKey
+          );
+        }
+      } catch (error) {
+        throw new S3Error("An error occurred while generating the view url");
       }
       return book;
     } catch (error) {
+      if (error instanceof S3Error) throw error;
       throw new DatabaseError(
         `Failed to create book: ${
           error instanceof Error ? error.message : String(error)
@@ -115,6 +120,91 @@ class BookService {
       if (error instanceof NotFoundError) throw error;
       throw new DatabaseError(
         `Failed to delete book: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  async updateBook(bookId: string, input: UpdateBookInput): Promise<Book> {
+    try {
+      const existingBook: Book = await this.getBookById(bookId);
+      if (!existingBook) {
+        throw new NotFoundError(`Book with ID ${bookId} not found`);
+      }
+      const updatedAt = new Date().toISOString();
+
+      const updateExpressionParts: string[] = [];
+      const expressionAttributeNames: Record<string, string> = {};
+      const expressionAttributeValues: Record<string, any> = {};
+
+      // Build dynamic update expression for all possible fields
+      const fieldsToUpdate: Array<keyof UpdateBookInput> = [
+        "title",
+        "description",
+        "author",
+        "category",
+        "isbn",
+        "publisher",
+        "publishedYear",
+        "language",
+        "pageCount",
+        "price",
+        "stockQuantity",
+        "coverImageKey",
+      ];
+
+      fieldsToUpdate.forEach((field) => {
+        if (input[field] !== undefined) {
+          updateExpressionParts.push(`#${field} = :${field}`);
+          expressionAttributeNames[`#${field}`] = field;
+          expressionAttributeValues[`:${field}`] = input[field];
+        }
+      });
+
+      // if updating the cover image, delete the old one from S3
+      if (
+        input.coverImageKey &&
+        existingBook.coverImageKey &&
+        existingBook.coverImageKey !== input.coverImageKey
+      ) {
+        await this.s3Service.deleteImage(existingBook.coverImageKey);
+      }
+
+      // Always update the updatedAt timestamp
+      updateExpressionParts.push("#updatedAt = :updatedAt");
+      expressionAttributeNames["#updatedAt"] = "updatedAt";
+      expressionAttributeValues[":updatedAt"] = updatedAt;
+
+      const command = new UpdateCommand({
+        TableName: this.tableName,
+        Key: { id: bookId },
+        UpdateExpression: `SET ${updateExpressionParts.join(", ")}`,
+        ExpressionAttributeNames: expressionAttributeNames,
+        ExpressionAttributeValues: expressionAttributeValues,
+        ReturnValues: "ALL_NEW",
+      });
+
+      const result = await this.docClient.send(command);
+      const updatedBook = result.Attributes as Book;
+
+      // generating the presigned URL if coverImageKey is provided
+      if (updatedBook.coverImageKey) {
+        try {
+          updatedBook.coverImageUrl =
+            await this.s3Service.generatePresignedUrlForView(
+              updatedBook.coverImageKey
+            );
+        } catch (error) {
+          throw new S3Error("");
+        }
+      }
+      return updatedBook;
+    } catch (error) {
+      if (error instanceof NotFoundError || error instanceof S3Error)
+        throw error;
+      throw new DatabaseError(
+        `Failed to update book : ${
           error instanceof Error ? error.message : String(error)
         }`
       );
