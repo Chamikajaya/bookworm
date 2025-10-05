@@ -56,6 +56,24 @@ functions:
           path: /books
           cors: true # ! TODO: For now cors is true, later change to specific domain
 
+  deleteBook:
+    handler: src/handlers/books/deleteBook.handler
+    description: Delete a  book - ADMIN
+    events:
+      - http:
+          method: delete
+          path: /books/{id}
+          cors: true # ! TODO: For now cors is true, later change to specific domain
+
+  generateUploadUrl:
+    handler: src/handlers/books/generateUploadUrl.handler
+    description: Generate presigned URL for uploading book cover - ADMIN
+    events:
+      - http:
+          method: post
+          path: /books/{id}/upload-url
+          cors: true # ! TODO: For now cors is true, later change to specific domain
+
 resources:
   Resources:
     # DynamoDB Tables

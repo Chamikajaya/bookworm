@@ -1,6 +1,3 @@
-// ! getAll should be implemented in a way that it supports search by title as well
-// TODO: Implement pagination for getAll
-
 import {
   DynamoDBDocumentClient,
   PutCommand,
@@ -45,6 +42,73 @@ class BookService {
       if (error instanceof NotFoundError) throw error;
       throw new DatabaseError(
         `Failed to retrieve book: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  async createBook(input: CreateBookInput): Promise<Book> {
+    try {
+      const timestamp = new Date().toISOString();
+      const book: Book = {
+        id: uuidv4(),
+        title: input.title,
+        description: input.description,
+        author: input.author,
+        isbn: input.isbn,
+        publisher: input.publisher,
+        publishedYear: input.publishedYear,
+        language: input.language || "English",
+        pageCount: input.pageCount,
+        category: input.category,
+        price: input.price,
+        stockQuantity: input.stockQuantity ?? 0,
+        coverImageKey: input.coverImageKey,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      };
+      const command = new PutCommand({
+        TableName: this.tableName,
+        Item: book,
+      });
+      await this.docClient.send(command);
+
+      // generating the presigned URL if coverImageKey is provided
+      if (book.coverImageKey) {
+        book.coverImageUrl = await this.s3Service.generatePresignedUrlForView(
+          book.coverImageKey
+        );
+      }
+      return book;
+    } catch (error) {
+      throw new DatabaseError(
+        `Failed to create book: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  async deleteBook(bookId: string): Promise<void> {
+    try {
+      const existingBook: Book = await this.getBookById(bookId);
+      if (!existingBook) {
+        throw new NotFoundError(`Book with ID ${bookId} not found`);
+      }
+      // deleting cover image from S3 if exists
+      if (existingBook.coverImageKey) {
+        await this.s3Service.deleteImage(existingBook.coverImageKey);
+      }
+      const command = new DeleteCommand({
+        TableName: this.tableName,
+        Key: { id: bookId },
+      });
+      await this.docClient.send(command);
+    } catch (error) {
+      if (error instanceof NotFoundError) throw error;
+      throw new DatabaseError(
+        `Failed to delete book: ${
           error instanceof Error ? error.message : String(error)
         }`
       );
@@ -135,48 +199,6 @@ class BookService {
     } catch (error) {
       throw new DatabaseError(
         `Failed to search books: ${
-          error instanceof Error ? error.message : String(error)
-        }`
-      );
-    }
-  }
-  // TODO: Similar error handling
-  async createBook(input: CreateBookInput): Promise<Book> {
-    try {
-      const timestamp = new Date().toISOString();
-      const book: Book = {
-        id: uuidv4(),
-        title: input.title,
-        description: input.description,
-        author: input.author,
-        isbn: input.isbn,
-        publisher: input.publisher,
-        publishedYear: input.publishedYear,
-        language: input.language || "English",
-        pageCount: input.pageCount,
-        category: input.category,
-        price: input.price,
-        stockQuantity: input.stockQuantity ?? 0,
-        coverImageKey: input.coverImageKey,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-      };
-      const command = new PutCommand({
-        TableName: this.tableName,
-        Item: book,
-      });
-      await this.docClient.send(command);
-
-      // generating the presigned URL if coverImageKey is provided
-      if (book.coverImageKey) {
-        book.coverImageUrl = await this.s3Service.generatePresignedUrlForView(
-          book.coverImageKey
-        );
-      }
-      return book;
-    } catch (error) {
-      throw new DatabaseError(
-        `Failed to create book: ${
           error instanceof Error ? error.message : String(error)
         }`
       );
