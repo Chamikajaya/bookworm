@@ -25,7 +25,7 @@ export class S3Service {
     contentType: string
   ): Promise<{ uploadUrl: string; key: string }> {
     const timestamp = Date.now();
-    const key = `book-covers/${bookId}/${timestamp}.${fileExtension}`;
+    const key = `book-covers/${bookId}/${timestamp}${fileExtension}`;
     const command = new PutObjectCommand({
       Bucket: this.bucketName,
       Key: key,
