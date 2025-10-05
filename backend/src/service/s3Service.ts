@@ -65,22 +65,6 @@ export class S3Service {
       return false;
     }
   }
-
-  validateImageFile(fileExtension: string, contentType: string): boolean {
-    const validExtensions = ["jpg", "jpeg", "png", "webp", "gif"];
-    const validContentTypes = [
-      "image/jpg",
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-      "image/gif",
-    ];
-
-    return (
-      validExtensions.includes(fileExtension.toLowerCase()) &&
-      validContentTypes.includes(contentType.toLowerCase())
-    );
-  }
 }
 
 export const s3Service = new S3Service();

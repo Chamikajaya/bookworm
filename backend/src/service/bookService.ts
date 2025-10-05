@@ -127,12 +127,6 @@ class BookService {
     contentType: string
   ): Promise<{ uploadUrl: string; key: string }> {
     try {
-      if (!this.s3Service.validateImageFile(fileExtension, contentType)) {
-        throw new ValidationError(
-          "Invalid image file type. Supported types: jpg, jpeg, png, webp, gif"
-        );
-      }
-
       await this.getBookById(bookId); // this will throw NotFoundError
 
       return await this.s3Service.generatePresignedUrlForUpload(
