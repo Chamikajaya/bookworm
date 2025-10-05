@@ -10,8 +10,7 @@ provider:
   environment:
     BOOKS_TABLE: ${self:service}-books-table-${self:provider.stage}
     BOOK_COVERS_BUCKET: ${self:service}-book-covers-bucket-${self:provider.stage}
-    # AWS_REGION: ${self:provider.region}
-    # TODO: Add frotnend URL for CORS
+    FRONTEND_URL: ${env:FRONTEND_URL, 'http://localhost:3000'} #
 
   iam:
     role:

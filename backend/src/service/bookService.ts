@@ -43,7 +43,16 @@ class BookService {
       if (!result.Item) {
         throw new NotFoundError(`Book with ID ${bookId} not found`);
       }
-      return result.Item as Book;
+      const book = result.Item as Book;
+
+      // Generate presigned URL if coverImageKey exists
+      if (book.coverImageKey) {
+        book.coverImageUrl = await this.s3Service.generatePresignedUrlForView(
+          book.coverImageKey
+        );
+      }
+
+      return book;
     } catch (error) {
       if (error instanceof NotFoundError) throw error;
       throw new DatabaseError(
@@ -81,18 +90,14 @@ class BookService {
       await this.docClient.send(command);
 
       // generating the presigned URL if coverImageKey is provided
-      try {
-        if (book.coverImageKey) {
-          book.coverImageUrl = await this.s3Service.generatePresignedUrlForView(
-            book.coverImageKey
-          );
-        }
-      } catch (error) {
-        throw new S3Error("An error occurred while generating the view url");
+      if (book.coverImageKey) {
+        book.coverImageUrl = await this.s3Service.generatePresignedUrlForView(
+          book.coverImageKey
+        );
       }
+
       return book;
     } catch (error) {
-      if (error instanceof S3Error) throw error;
       throw new DatabaseError(
         `Failed to create book: ${
           error instanceof Error ? error.message : String(error)
@@ -190,19 +195,14 @@ class BookService {
 
       // generating the presigned URL if coverImageKey is provided
       if (updatedBook.coverImageKey) {
-        try {
-          updatedBook.coverImageUrl =
-            await this.s3Service.generatePresignedUrlForView(
-              updatedBook.coverImageKey
-            );
-        } catch (error) {
-          throw new S3Error("");
-        }
+        updatedBook.coverImageUrl =
+          await this.s3Service.generatePresignedUrlForView(
+            updatedBook.coverImageKey
+          );
       }
       return updatedBook;
     } catch (error) {
-      if (error instanceof NotFoundError || error instanceof S3Error)
-        throw error;
+      if (error instanceof NotFoundError) throw error;
       throw new DatabaseError(
         `Failed to update book : ${
           error instanceof Error ? error.message : String(error)
@@ -302,6 +302,27 @@ class BookService {
 
       const command = new ScanCommand(scanInput);
       const result = await this.docClient.send(command);
+
+      // Generate presigned URLs for all books with cover images
+      const books = (result.Items || []) as Book[];
+      await Promise.all(
+        books.map(async (book) => {
+          if (book.coverImageKey) {
+            try {
+              book.coverImageUrl =
+                await this.s3Service.generatePresignedUrlForView(
+                  book.coverImageKey
+                );
+            } catch (error) {
+              // Log error but don't fail the entire request
+              console.error(
+                `Failed to generate URL for book ${book.id}:`,
+                error
+              );
+            }
+          }
+        })
+      );
 
       // encoding the LastEvaluatedKey to base64 string for safe transport
       const lastKey = result.LastEvaluatedKey
