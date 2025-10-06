@@ -28,8 +28,12 @@ export async function handler(
       const tree = z.treeifyError(validationResult.error);
       throw new ValidationError(JSON.stringify(tree));
     }
-    await bookService.createBook(validationResult.data);
-    return successResponse({}, "Book created successfully", 201);
+    const bookResponse = await bookService.createBook(validationResult.data);
+    return successResponse(
+      { id: bookResponse.id },
+      "Book created successfully",
+      201
+    );
   } catch (error) {
     return handleError(error, "createBook");
   }

@@ -80,48 +80,6 @@ export const adminApi = createApi({
         }
       },
     }),
-
-    // uploadToS3: builder.mutation<
-    //   void,
-    //   { url: string; file: File; onProgress?: (progress: number) => void }
-    // >({
-    //   queryFn: async ({ url, file, onProgress }) => {
-    //     try {
-    //       const xhr = new XMLHttpRequest();
-
-    //       return await new Promise((resolve, reject) => {
-    //         xhr.upload.addEventListener("progress", (e) => {
-    //           if (e.lengthComputable && onProgress) {
-    //             const progress = (e.loaded / e.total) * 100;
-    //             onProgress(progress);
-    //           }
-    //         });
-
-    //         xhr.addEventListener("load", () => {
-    //           if (xhr.status >= 200 && xhr.status < 300) {
-    //             resolve({ data: undefined });
-    //           } else {
-    //             reject({
-    //               error: { status: xhr.status, data: "Upload failed" },
-    //             });
-    //           }
-    //         });
-
-    //         xhr.addEventListener("error", () => {
-    //           reject({
-    //             error: { status: "FETCH_ERROR", data: "Network error" },
-    //           });
-    //         });
-
-    //         xhr.open("PUT", url);
-    //         xhr.setRequestHeader("Content-Type", file.type);
-    //         xhr.send(file);
-    //       });
-    //     } catch (error) {
-    //       return { error: { status: "FETCH_ERROR", data: error } };
-    //     }
-    //   },
-    // }),
   }),
 });
 

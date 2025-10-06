@@ -63,8 +63,10 @@ class BookService {
     }
   }
 
-  async createBook(input: CreateBookInput): Promise<void> {
+  async createBook(input: CreateBookInput): Promise<{ id: string }> {
+    console.log("Starting createBook");
     try {
+      console.log("Inside try block of createBook");
       const timestamp = new Date().toISOString();
       const book: Book = {
         id: uuidv4(),
@@ -88,6 +90,7 @@ class BookService {
         Item: book,
       });
       await this.docClient.send(command);
+      return { id: book.id };
     } catch (error) {
       throw new DatabaseError(
         `Failed to create book: ${

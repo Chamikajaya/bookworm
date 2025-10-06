@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const bookSchema = z.object({
+export const bookMetadataSchema = z.object({
   title: z.string().min(1, "Title is required").max(200, "Title is too long"),
   category: z.enum([
     "Fiction",
