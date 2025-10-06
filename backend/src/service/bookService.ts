@@ -47,7 +47,7 @@ class BookService {
 
       // Generate presigned URL if coverImageKey exists
       if (book.coverImageKey) {
-        book.coverImageUrl = await this.s3Service.generatePresignedUrlForView(
+        book.coverImageUrl = await this.s3Service.generateCloudfrontUrlForView(
           book.coverImageKey
         );
       }
@@ -291,7 +291,7 @@ class BookService {
         books.map(async (book) => {
           if (book.coverImageKey) {
             book.coverImageUrl =
-              await this.s3Service.generatePresignedUrlForView(
+              await this.s3Service.generateCloudfrontUrlForView(
                 book.coverImageKey
               );
           }
