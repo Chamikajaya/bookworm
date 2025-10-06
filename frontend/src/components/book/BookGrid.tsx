@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
+import useInfiniteScroll from "react-infinite-scroll-hook";
 import { useGetBooksQuery } from "@/api/booksApi";
 import { BookCard } from "./BookCard";
 import { BookSkeleton } from "./BookSkeleton";
 import { EmptyState } from "./EmptyState";
-import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import type { Book } from "@/types/bookTypes";
@@ -29,17 +29,16 @@ export const BookGrid = () => {
     }
   }, [data]);
 
-  const loadMore = useCallback(() => {
-    if (data?.hasMore && data?.lastEvaluatedKey) {
-      setLastKey(data.lastEvaluatedKey);
-    }
-  }, [data]);
-
-  const observerTarget = useInfiniteScroll({
-    hasMore: data?.hasMore ?? false,
-    isLoading: isFetching,
-    onLoadMore: loadMore,
-    threshold: 0.8,
+  const [infiniteRef] = useInfiniteScroll({
+    loading: isFetching,
+    hasNextPage: data?.hasMore ?? false,
+    onLoadMore: () => {
+      if (data?.lastEvaluatedKey) {
+        setLastKey(data.lastEvaluatedKey);
+      }
+    },
+    disabled: Boolean(error),
+    rootMargin: "0px 0px 400px 0px",
   });
 
   // Initial loading state
@@ -78,20 +77,28 @@ export const BookGrid = () => {
         ))}
       </div>
 
-      {/* Loading more indicator */}
-      {isFetching && allBooks.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mt-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <BookSkeleton key={`loading-${i}`} />
-          ))}
+      {/* Sentry component for infinite scroll - always rendered when hasNextPage is true */}
+      {(data?.hasMore || isFetching) && (
+        <div
+          ref={infiniteRef}
+          className="h-20 w-full flex items-center justify-center mt-8"
+        >
+          {isFetching ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <BookSkeleton key={`loading-${i}`} />
+              ))}
+            </div>
+          ) : (
+            <span className="text-muted-foreground text-sm">
+              Scroll for more
+            </span>
+          )}
         </div>
       )}
 
-      {/* Intersection observer target */}
-      <div ref={observerTarget} className="h-4" />
-
       {/* End of list message */}
-      {!data?.hasMore && allBooks.length > 0 && (
+      {!data?.hasMore && allBooks.length > 0 && !isFetching && (
         <p className="text-center text-muted-foreground mt-8">
           You've reached the end of the list
         </p>
