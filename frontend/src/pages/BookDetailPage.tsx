@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useGetBookByIdQuery } from "@/api/booksApi";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -10,7 +10,21 @@ import { ArrowLeft, AlertCircle } from "lucide-react";
 export const BookDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { data: book, isLoading, error } = useGetBookByIdQuery(id!);
+
+  // Get the previous path from location state, or default to root
+  const previousPath = (location.state as { from?: string })?.from || "/";
+
+  const handleBackClick = () => {
+    // Use navigate with -1 to go back in history if user came from within the app
+    // Otherwise, navigate to the stored previous path
+    if (window.history.length > 2) {
+      navigate(-1);
+    } else {
+      navigate(previousPath);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -39,7 +53,7 @@ export const BookDetailPage = () => {
       <div className="min-h-screen bg-background">
         <header className="border-b">
           <div className="container mx-auto px-4 py-4">
-            <Button variant="ghost" onClick={() => navigate("/")}>
+            <Button variant="ghost" onClick={handleBackClick}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
@@ -61,7 +75,7 @@ export const BookDetailPage = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => navigate("/")}>
+          <Button variant="ghost" onClick={handleBackClick}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Books
           </Button>
