@@ -12,12 +12,11 @@ export const booksApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: API_BASE_URL,
   }),
-  tagTypes: ["Books"], // to tell RTK Query when to automatically refetch our book data
+  tagTypes: ["Books"],
   endpoints: (builder) => ({
     // Get paginated books with search filters
     getBooks: builder.query<PaginatedBooksResponse, BookSearchParams>({
       query: (params) => {
-        // need to pass search params object so we can build query string
         const searchParams = new URLSearchParams();
 
         if (params.title) searchParams.append("title", params.title);
@@ -32,9 +31,8 @@ export const booksApi = createApi({
 
         return `/books?${searchParams.toString()}`;
       },
-      providesTags: (
-        result // when
-      ) =>
+      transformResponse: (response: any) => response.data,
+      providesTags: (result) =>
         result
           ? [
               ...result.items.map(({ id }) => ({
@@ -44,13 +42,13 @@ export const booksApi = createApi({
               { type: "Books", id: "PARTIAL-LIST" },
             ]
           : [{ type: "Books", id: "PARTIAL-LIST" }],
-      // Even if no component is currently using this data, keep it in the cache for 300 seconds.  After 5 minutes, if the data is still unused, it will be removed to save memory
       keepUnusedDataFor: 300,
     }),
 
     // Get single book by ID
     getBookById: builder.query<Book, string>({
       query: (id) => `/books/${id}`,
+      transformResponse: (response: any) => response.data,
       providesTags: (_result, _error, id) => [{ type: "Books", id }],
       keepUnusedDataFor: 300,
     }),
