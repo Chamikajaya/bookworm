@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "upload-s3": "aws s3 sync ./dist s3://bookworm-store",
+    "invalidate-cloudfront": "aws cloudfront create-invalidation --distribution-id E2Y0J2V4R5LL91 --paths '/*'",
+    "deploy": "npm run build && npm run upload-s3 && npm run invalidate-cloudfront"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -15,6 +18,7 @@
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-progress": "^1.1.7",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
