@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useGetBooksQuery } from "@/api/booksApi";
 import { BookCard } from "./BookCard";
 import { BookSkeleton } from "./BookSkeleton";

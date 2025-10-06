@@ -1,12 +1,7 @@
-import { ModeToggle } from "./components/ModeToggle";
+import { AppRouter } from "./router";
 
 function App() {
-  return (
-    <>
-      <h1 className="font-extrabold">BookWorm</h1>
-      <ModeToggle />
-    </>
-  );
+  return <AppRouter />;
 }
 
 export default App;
