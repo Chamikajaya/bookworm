@@ -1,5 +1,3 @@
-// properties related to book cover ?
-
 export interface Book {
   id: string;
   entityType: string; // for GSI purposes
@@ -9,7 +7,7 @@ export interface Book {
   author: string;
   isbn?: string;
   publisher?: string;
-  publishedYear: number;\
+  publishedYear: number;
   language: string;
   pageCount?: number;
   price: number;

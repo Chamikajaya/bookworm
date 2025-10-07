@@ -42,9 +42,9 @@ export interface CreateBookInput {
   author: string;
   isbn?: string;
   publisher?: string;
-  publishedYear: number;
-  language: string;
-  pageCount: number;
+  publishedYear?: number;
+  language?: string;
+  pageCount?: number;
   category: BookCategory;
   price: number;
   stockQuantity?: number;
@@ -67,10 +67,11 @@ export type BookCategory =
   | "Health";
 
 export interface UploadUrlResponse {
-  uploadUrl: string;
-  key: string;
+  data: {
+    uploadUrl: string;
+    key: string;
+  };
 }
-
 export interface UploadUrlRequest {
   fileExtension: string;
   contentType: string;

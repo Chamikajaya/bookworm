@@ -1,5 +1,4 @@
 import type { UseFormReturn } from "react-hook-form";
-import type { BookMetadataInput } from "@/lib/validations/bookSchema";
 import {
   FormControl,
   FormField,
@@ -19,7 +18,7 @@ import {
 } from "@/components/ui/select";
 
 interface BookFormStep1Props {
-  form: UseFormReturn<BookMetadataInput>;
+  form: UseFormReturn<any>;
   onNext: () => void;
 }
 

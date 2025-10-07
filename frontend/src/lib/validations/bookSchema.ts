@@ -37,7 +37,8 @@ export const bookMetadataSchema = z.object({
   publishedYear: z
     .number()
     .int()
-    .max(new Date().getFullYear(), "Published year cannot be in the future"),
+    .max(new Date().getFullYear(), "Published year cannot be in the future")
+    .optional(),
   language: z.string().min(2).max(10).default("English"),
   pageCount: z.number().int().positive().optional(),
   price: z
@@ -69,5 +70,5 @@ export const imageUploadSchema = z.object({
     .optional(),
 });
 
-export type BookMetadataInput = z.infer<typeof bookSchema>;
+export type BookMetadataInput = z.infer<typeof bookMetadataSchema>;
 export type ImageUploadInput = z.infer<typeof imageUploadSchema>;

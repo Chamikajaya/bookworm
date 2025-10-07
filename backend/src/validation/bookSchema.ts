@@ -24,7 +24,7 @@ export const bookSchema = z.object({
     .number()
     .int()
     .max(new Date().getFullYear(), "Published year cannot be in the future"),
-  language: z.string().min(2).max(10).default("English"),
+  language: z.string().min(2).max(10).default("English").optional(),
   pageCount: z.number().int().positive().optional(),
   price: z
     .number()

@@ -10,10 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StepIndicator } from "@/components/admin/StepIndicator";
 import { BookFormStepOne } from "@/components/admin/BookFormStepOne";
 import { BookFormStepTwo } from "@/components/admin/BookFormStepTwo";
-import {
-  bookMetadataSchema,
-  type BookMetadataInput,
-} from "@/lib/validations/bookSchema";
+import { bookMetadataSchema } from "@/lib/validations/bookSchema";
 import {
   useCreateBookMutation,
   useGenerateUploadUrlMutation,
@@ -27,7 +24,7 @@ export const AddBook = () => {
   const [createdBookId, setCreatedBookId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<BookMetadataInput>({
+  const form = useForm({
     resolver: zodResolver(bookMetadataSchema),
     defaultValues: {
       title: "",
