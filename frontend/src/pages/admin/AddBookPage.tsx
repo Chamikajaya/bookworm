@@ -25,6 +25,7 @@ export const AddBook = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [createdBookId, setCreatedBookId] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<BookMetadataInput>({
     resolver: zodResolver(bookMetadataSchema),
@@ -32,10 +33,7 @@ export const AddBook = () => {
       title: "",
       author: "",
       description: "",
-      price: 0,
-      stockQuantity: 0,
       language: "English",
-      publishedYear: new Date().getFullYear(),
     },
   });
 
@@ -53,6 +51,7 @@ export const AddBook = () => {
   };
 
   const handleSubmit = async (imageFile: File | null) => {
+    setIsSubmitting(true);
     try {
       const formData = form.getValues();
 
@@ -83,7 +82,7 @@ export const AddBook = () => {
         // Upload to S3
         console.log("Just before Uploading to S3...");
         await uploadToS3({
-          url: response.data.uploadUrl, // ! TODO:
+          url: response.data.uploadUrl,
           file: imageFile,
         }).unwrap();
 
@@ -92,7 +91,7 @@ export const AddBook = () => {
         // Update book with image key
         await updateBookImage({
           bookId,
-          coverImageKey: response.data.key, // ! TODO:
+          coverImageKey: response.data.key,
         }).unwrap();
       }
 
@@ -103,6 +102,7 @@ export const AddBook = () => {
       toast.error(
         error?.data?.message || "Failed to create book. Please try again."
       );
+      setIsSubmitting(false);
     }
   };
 
@@ -110,7 +110,11 @@ export const AddBook = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={() => navigate("/admin/dashboard")}>
+          <Button
+            variant="ghost"
+            onClick={() => navigate("/admin/dashboard")}
+            disabled={isSubmitting}
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Dashboard
           </Button>
@@ -134,7 +138,7 @@ export const AddBook = () => {
                   <BookFormStepTwo
                     onBack={handleBack}
                     onSubmit={handleSubmit}
-                    isSubmitting={false}
+                    isSubmitting={isSubmitting}
                   />
                 )}
               </form>

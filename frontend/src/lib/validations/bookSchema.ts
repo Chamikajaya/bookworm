@@ -2,19 +2,22 @@ import { z } from "zod";
 
 export const bookMetadataSchema = z.object({
   title: z.string().min(1, "Title is required").max(200, "Title is too long"),
-  category: z.enum([
-    "Fiction",
-    "Non-Fiction",
-    "Science",
-    "History",
-    "Biography",
-    "Children",
-    "Fantasy",
-    "Mystery",
-    "Romance",
-    "Self-Help",
-    "Health",
-  ]),
+  category: z.enum(
+    [
+      "Fiction",
+      "Non-Fiction",
+      "Science",
+      "History",
+      "Biography",
+      "Children",
+      "Fantasy",
+      "Mystery",
+      "Romance",
+      "Self-Help",
+      "Health",
+    ],
+    { message: "Please select a valid category" }
+  ),
   description: z
     .string()
     .min(10, "Description must be at least 10 characters")
@@ -41,7 +44,6 @@ export const bookMetadataSchema = z.object({
     .number()
     .positive("Price must be positive")
     .min(0, "Price cannot be negative"),
-
   stockQuantity: z
     .number()
     .int()

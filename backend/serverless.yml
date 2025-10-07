@@ -27,6 +27,7 @@ provider:
             - dynamodb:Query
           Resource:
             - !GetAtt BooksTable.Arn
+            - !Sub "${BooksTable.Arn}/index/*"
         # s3 permissions
         - Effect: Allow
           Action:
@@ -109,8 +110,8 @@ resources:
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: "S"
-          # - AttributeName: category
-          #   AttributeType: "S"
+          - AttributeName: category
+            AttributeType: "S"
           - AttributeName: updatedAt
             AttributeType: "S"
           - AttributeName: price
@@ -139,24 +140,24 @@ resources:
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
-          # # GSI for querying books by category and sorting by updatedAt
-          # - IndexName: category-updatedAt-index
-          #   KeySchema:
-          #     - AttributeName: category
-          #       KeyType: HASH
-          #     - AttributeName: updatedAt
-          #       KeyType: RANGE
-          #   Projection:
-          #     ProjectionType: ALL
-          # # GSI for querying books by category and sorting by price
-          # - IndexName: category-price-index
-          #   KeySchema:
-          #     - AttributeName: category
-          #       KeyType: HASH
-          #     - AttributeName: price
-          #       KeyType: RANGE
-          #   Projection:
-          #     ProjectionType: ALL
+          # GSI for querying books by category and sorting by updatedAt
+          - IndexName: category-updatedAt-index
+            KeySchema:
+              - AttributeName: category
+                KeyType: HASH
+              - AttributeName: updatedAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          # GSI for querying books by category and sorting by price
+          - IndexName: category-price-index
+            KeySchema:
+              - AttributeName: category
+                KeyType: HASH
+              - AttributeName: price
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
         Tags:
           - Key: Environment
             Value: ${self:provider.stage}

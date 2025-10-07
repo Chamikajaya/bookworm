@@ -9,7 +9,7 @@ export interface Book {
   author: string;
   isbn?: string;
   publisher?: string;
-  publishedYear: number;
+  publishedYear: number;\
   language: string;
   pageCount?: number;
   price: number;

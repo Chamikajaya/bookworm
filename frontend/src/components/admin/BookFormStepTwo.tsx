@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ImageUpload } from "./ImageUpload";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/components/ui/spinner";
 
 interface BookFormStep2Props {
   onBack: () => void;
@@ -43,7 +43,7 @@ export const BookFormStepTwo = ({
         <Button type="button" onClick={handleSubmit} disabled={isSubmitting}>
           {isSubmitting ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Spinner className="mr-2" />
               Creating Book...
             </>
           ) : (

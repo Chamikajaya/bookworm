@@ -105,6 +105,7 @@ export const BookFormStepOne = ({ form, onNext }: BookFormStep1Props) => {
                   type="number"
                   step="1"
                   placeholder="0.00"
+                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   {...field}
                   onChange={(e) =>
                     field.onChange(parseFloat(e.target.value) || 0)
@@ -126,7 +127,9 @@ export const BookFormStepOne = ({ form, onNext }: BookFormStep1Props) => {
                 <Input
                   type="number"
                   placeholder="0"
+                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   {...field}
+                  value={field.value || ""}
                   onChange={(e) =>
                     field.onChange(parseInt(e.target.value) || 0)
                   }
@@ -204,7 +207,9 @@ export const BookFormStepOne = ({ form, onNext }: BookFormStep1Props) => {
                 <Input
                   type="number"
                   placeholder={`${new Date().getFullYear()}`}
+                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   {...field}
+                  value={field.value || ""}
                   onChange={(e) =>
                     field.onChange(parseInt(e.target.value) || undefined)
                   }
@@ -225,7 +230,9 @@ export const BookFormStepOne = ({ form, onNext }: BookFormStep1Props) => {
                 <Input
                   type="number"
                   placeholder="0"
+                  className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   {...field}
+                  value={field.value || ""}
                   onChange={(e) =>
                     field.onChange(parseInt(e.target.value) || undefined)
                   }

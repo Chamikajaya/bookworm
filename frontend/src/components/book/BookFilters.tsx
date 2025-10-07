@@ -210,6 +210,7 @@ export const BookFilters = ({ onFiltersChange }: BookFiltersProps) => {
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && applyFilters()}
+              className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
           </div>
 
@@ -223,6 +224,7 @@ export const BookFilters = ({ onFiltersChange }: BookFiltersProps) => {
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && applyFilters()}
+              className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
           </div>
         </div>
@@ -355,6 +357,7 @@ export const BookFilters = ({ onFiltersChange }: BookFiltersProps) => {
                         placeholder="0.00"
                         value={minPrice}
                         onChange={(e) => setMinPrice(e.target.value)}
+                        className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
                     <div className="space-y-2">
@@ -368,6 +371,7 @@ export const BookFilters = ({ onFiltersChange }: BookFiltersProps) => {
                         placeholder="999.99"
                         value={maxPrice}
                         onChange={(e) => setMaxPrice(e.target.value)}
+                        className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
                   </div>

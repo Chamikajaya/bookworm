@@ -238,7 +238,7 @@ class BookService {
       let queryInput: QueryCommandInput;
 
       // Determine which GSI to use based on category filter
-      if (category) {
+      if (category && category !== "All") {
         // Use category-based GSI when filtering by category
         const indexName =
           sortBy === "price"
