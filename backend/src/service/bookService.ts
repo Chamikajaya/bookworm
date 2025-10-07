@@ -19,6 +19,7 @@ import {
 } from "../utils/errors";
 import { BookSearchParams, PaginatedResponse } from "../types/pagination";
 import { S3Service, s3Service } from "./s3Service";
+import { logger } from "../config/logger";
 
 class BookService {
   private docClient: DynamoDBDocumentClient;
@@ -71,8 +72,10 @@ class BookService {
         id: uuidv4(),
         entityType: "BOOK",
         title: input.title,
+        titileLower: input.title.toLowerCase(), // for case-insensitive search
         description: input.description,
         author: input.author,
+        authorLower: input.author.toLowerCase(), // for case-insensitive search
         isbn: input.isbn,
         publisher: input.publisher,
         publishedYear: input.publishedYear,
@@ -158,6 +161,22 @@ class BookService {
           updateExpressionParts.push(`#${field} = :${field}`);
           expressionAttributeNames[`#${field}`] = field;
           expressionAttributeValues[`:${field}`] = input[field];
+
+          // Add lowercase versions for title and author
+          if (field === "title") {
+            updateExpressionParts.push(`#titleLower = :titleLower`);
+            expressionAttributeNames["#titleLower"] = "titleLower";
+            expressionAttributeValues[":titleLower"] = (
+              input.title as string
+            ).toLowerCase();
+          }
+          if (field === "author") {
+            updateExpressionParts.push(`#authorLower = :authorLower`);
+            expressionAttributeNames["#authorLower"] = "authorLower";
+            expressionAttributeValues[":authorLower"] = (
+              input.author as string
+            ).toLowerCase();
+          }
         }
       });
 
@@ -239,6 +258,7 @@ class BookService {
 
       // Determine which GSI to use based on category filter
       if (category && category !== "All") {
+        logger.info("Using category-based GSI for search");
         // Use category-based GSI when filtering by category
         const indexName =
           sortBy === "price"
@@ -255,6 +275,7 @@ class BookService {
           ScanIndexForward: sortOrder === "asc",
         };
       } else {
+        logger.info("Using entityType-based GSI for search");
         // Use entityType-based GSI when querying all books
         const indexName =
           sortBy === "price"
