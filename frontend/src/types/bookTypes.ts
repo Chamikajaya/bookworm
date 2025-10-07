@@ -27,11 +27,13 @@ export interface PaginatedBooksResponse {
 export interface BookSearchParams {
   title?: string;
   author?: string;
-  category: BookCategory;
+  category?: BookCategory;
   minPrice?: number;
   maxPrice?: number;
   limit?: number;
   lastKey?: string;
+  sortBy?: SortBy;
+  sortOrder?: SortOrder;
 }
 
 export interface CreateBookInput {
@@ -47,6 +49,9 @@ export interface CreateBookInput {
   price: number;
   stockQuantity?: number;
 }
+
+export type SortBy = "updatedAt" | "price";
+export type SortOrder = "asc" | "desc";
 
 export type BookCategory =
   | "Fiction"

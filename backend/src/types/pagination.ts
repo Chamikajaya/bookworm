@@ -16,4 +16,9 @@ export interface BookSearchParams extends PaginationParams {
   category?: string;
   minPrice?: number;
   maxPrice?: number;
+  sortBy?: SortBy;
+  sortOrder?: SortOrder;
 }
+
+export type SortBy = "updatedAt" | "price";
+export type SortOrder = "asc" | "desc";

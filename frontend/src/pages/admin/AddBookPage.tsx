@@ -59,7 +59,6 @@ export const AddBook = () => {
       // Step 1: Create book
       const bookResponse = await createBook(formData).unwrap();
 
-      // TODO:  ! In order to this to work, backend must return the created book id in the response right ? - is current structure work fine ?
       const bookId = (bookResponse as any).data?.id || createdBookId;
 
       if (!bookId) {
@@ -82,15 +81,18 @@ export const AddBook = () => {
         console.log("Generated upload URL:", response);
 
         // Upload to S3
+        console.log("Just before Uploading to S3...");
         await uploadToS3({
-          url: response.data.uploadUrl,
+          url: response.data.uploadUrl, // ! TODO:
           file: imageFile,
         }).unwrap();
 
+        console.log("Uploaded to S3 successfully.");
+        console.log("Just before updating book image...");
         // Update book with image key
         await updateBookImage({
           bookId,
-          coverImageKey: response.data.key,
+          coverImageKey: response.data.key, // ! TODO:
         }).unwrap();
       }
 

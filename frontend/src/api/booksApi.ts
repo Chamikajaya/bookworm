@@ -28,6 +28,9 @@ export const booksApi = createApi({
           searchParams.append("maxPrice", params.maxPrice.toString());
         if (params.limit) searchParams.append("limit", params.limit.toString());
         if (params.lastKey) searchParams.append("lastKey", params.lastKey);
+        if (params.sortBy) searchParams.append("sortBy", params.sortBy);
+        if (params.sortOrder)
+          searchParams.append("sortOrder", params.sortOrder);
 
         return `/books?${searchParams.toString()}`;
       },

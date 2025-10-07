@@ -108,10 +108,55 @@ resources:
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
           - AttributeName: id
-            AttributeType: S
+            AttributeType: "S"
+          # - AttributeName: category
+          #   AttributeType: "S"
+          - AttributeName: updatedAt
+            AttributeType: "S"
+          - AttributeName: price
+            AttributeType: "N"
+          - AttributeName: entityType
+            AttributeType: "S"
         KeySchema:
           - AttributeName: id
             KeyType: HASH
+        GlobalSecondaryIndexes:
+          # GSI for all books sorted by updatedAt
+          - IndexName: entityType-updatedAt-index
+            KeySchema:
+              - AttributeName: entityType
+                KeyType: HASH
+              - AttributeName: updatedAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          # GSI for all books sorted by price
+          - IndexName: entityType-price-index
+            KeySchema:
+              - AttributeName: entityType
+                KeyType: HASH
+              - AttributeName: price
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          # # GSI for querying books by category and sorting by updatedAt
+          # - IndexName: category-updatedAt-index
+          #   KeySchema:
+          #     - AttributeName: category
+          #       KeyType: HASH
+          #     - AttributeName: updatedAt
+          #       KeyType: RANGE
+          #   Projection:
+          #     ProjectionType: ALL
+          # # GSI for querying books by category and sorting by price
+          # - IndexName: category-price-index
+          #   KeySchema:
+          #     - AttributeName: category
+          #       KeyType: HASH
+          #     - AttributeName: price
+          #       KeyType: RANGE
+          #   Projection:
+          #     ProjectionType: ALL
         Tags:
           - Key: Environment
             Value: ${self:provider.stage}

@@ -3,7 +3,7 @@ import { bookService } from "../../service/bookService";
 import { logger } from "../../config/logger";
 import { successResponse } from "../../utils/response";
 import { handleError } from "../../utils/handleErrors";
-import { BookSearchParams } from "../../types/pagination";
+import { BookSearchParams, SortBy, SortOrder } from "../../types/pagination";
 
 export async function handler(
   event: APIGatewayProxyEvent
@@ -12,6 +12,11 @@ export async function handler(
     logger.info("Get all books request received with params", {
       queryParams: event.queryStringParameters,
     });
+
+    const sortBy = (event.queryStringParameters?.sortBy ||
+      "updatedAt") as SortBy;
+    const sortOrder = (event.queryStringParameters?.sortOrder ||
+      "desc") as SortOrder;
 
     const searchParams: BookSearchParams = {
       title: event.queryStringParameters?.title,
@@ -28,6 +33,8 @@ export async function handler(
         ? parseInt(event.queryStringParameters.limit)
         : 10,
       lastEvaluatedKey: event.queryStringParameters?.lastKey,
+      sortBy,
+      sortOrder,
     };
 
     const result = await bookService.searchBooks(searchParams);

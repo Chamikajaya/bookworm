@@ -4,6 +4,7 @@ import { useGetBooksQuery } from "@/api/booksApi";
 import { BookCard } from "./BookCard";
 import { BookSkeleton } from "./BookSkeleton";
 import { EmptyState } from "./EmptyState";
+import { BookFilters } from "./BookFilters";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Pagination,
@@ -15,6 +16,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { AlertCircle } from "lucide-react";
+import type { BookCategory, SortBy, SortOrder } from "@/types/bookTypes";
 
 export const BookGrid = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -25,7 +27,20 @@ export const BookGrid = () => {
     1: undefined,
   });
 
-  const itemsPerPage = 4;
+  const itemsPerPage = 12;
+
+  // Extract all search params
+  const title = searchParams.get("title") || undefined;
+  const author = searchParams.get("author") || undefined;
+  const category = searchParams.get("category") as BookCategory | undefined;
+  const minPrice = searchParams.get("minPrice")
+    ? parseFloat(searchParams.get("minPrice")!)
+    : undefined;
+  const maxPrice = searchParams.get("maxPrice")
+    ? parseFloat(searchParams.get("maxPrice")!)
+    : undefined;
+  const sortBy = (searchParams.get("sortBy") || "updatedAt") as SortBy;
+  const sortOrder = (searchParams.get("sortOrder") || "desc") as SortOrder;
 
   // Sync currentPage with URL
   useEffect(() => {
@@ -38,7 +53,20 @@ export const BookGrid = () => {
   const { data, isLoading, isFetching, error } = useGetBooksQuery({
     limit: itemsPerPage,
     lastKey: pageKeys[currentPage],
+    title,
+    author,
+    category,
+    minPrice,
+    maxPrice,
+    sortBy,
+    sortOrder,
   });
+
+  // Reset pagination when filters change
+  const handleFiltersChange = () => {
+    setCurrentPage(1);
+    setPageKeys({ 1: undefined });
+  };
 
   // Update page keys when data changes
   useEffect(() => {
@@ -55,7 +83,9 @@ export const BookGrid = () => {
   };
 
   const updateUrl = (page: number) => {
-    setSearchParams({ page: page.toString() });
+    const params = new URLSearchParams(searchParams);
+    params.set("page", page.toString());
+    setSearchParams(params);
     scrollToTop();
   };
 
@@ -86,6 +116,7 @@ export const BookGrid = () => {
   if (isLoading) {
     return (
       <div className="space-y-8">
+        <BookFilters onFiltersChange={handleFiltersChange} />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {Array.from({ length: itemsPerPage }).map((_, i) => (
             <BookSkeleton key={i} />
@@ -98,18 +129,26 @@ export const BookGrid = () => {
   // Error state
   if (error) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Failed to load books. Please try again later.
-        </AlertDescription>
-      </Alert>
+      <div className="space-y-8">
+        <BookFilters onFiltersChange={handleFiltersChange} />
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Failed to load books. Please try again later.
+          </AlertDescription>
+        </Alert>
+      </div>
     );
   }
 
   // Empty state
   if (!data?.items || data.items.length === 0) {
-    return <EmptyState />;
+    return (
+      <div className="space-y-8">
+        <BookFilters onFiltersChange={handleFiltersChange} />
+        <EmptyState />
+      </div>
+    );
   }
 
   // Calculate pagination display
@@ -123,16 +162,13 @@ export const BookGrid = () => {
     const maxVisiblePages = 5;
 
     if (totalPagesKnown <= maxVisiblePages) {
-      // Show all known pages
       for (let i = 1; i <= totalPagesKnown; i++) {
         pages.push(i);
       }
-      // Show next page if available
       if (hasNextPage && currentPage === totalPagesKnown) {
         pages.push(totalPagesKnown + 1);
       }
     } else {
-      // Show smart pagination with ellipsis
       if (currentPage <= 3) {
         pages.push(1, 2, 3, 4);
         if (hasNextPage || totalPagesKnown > 4) {
@@ -157,6 +193,9 @@ export const BookGrid = () => {
 
   return (
     <div className="space-y-8">
+      {/* Filters */}
+      <BookFilters onFiltersChange={handleFiltersChange} />
+
       {/* Book Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {isFetching
@@ -182,7 +221,6 @@ export const BookGrid = () => {
               />
             </PaginationItem>
 
-            {/* Show first page if not in view */}
             {currentPage > 3 && totalPagesKnown > 5 && (
               <>
                 <PaginationItem>
@@ -199,7 +237,6 @@ export const BookGrid = () => {
               </>
             )}
 
-            {/* Page Numbers */}
             {pageNumbers.map((page) => {
               const isKnownPage = pageKeys[page] !== undefined;
               const isCurrentPage = currentPage === page;
@@ -223,7 +260,6 @@ export const BookGrid = () => {
               );
             })}
 
-            {/* Show ellipsis for more pages */}
             {hasNextPage && currentPage < totalPagesKnown - 2 && (
               <PaginationItem>
                 <PaginationEllipsis />

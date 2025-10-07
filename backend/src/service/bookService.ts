@@ -4,8 +4,8 @@ import {
   GetCommand,
   UpdateCommand,
   DeleteCommand,
-  ScanCommand,
-  ScanCommandInput,
+  QueryCommand,
+  QueryCommandInput,
 } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidv4 } from "uuid";
 
@@ -64,12 +64,12 @@ class BookService {
   }
 
   async createBook(input: CreateBookInput): Promise<{ id: string }> {
-    console.log("Starting createBook");
     try {
       console.log("Inside try block of createBook");
       const timestamp = new Date().toISOString();
       const book: Book = {
         id: uuidv4(),
+        entityType: "BOOK",
         title: input.title,
         description: input.description,
         author: input.author,
@@ -226,65 +226,99 @@ class BookService {
       const {
         title,
         author,
-        category,
+        category = "All", // default to "All" if not provided
         minPrice,
         maxPrice,
         limit = 10,
         lastEvaluatedKey,
+        sortBy = "updatedAt",
+        sortOrder = "desc",
       } = params;
 
-      // Build filter expression dynamically
+      let queryInput: QueryCommandInput;
+
+      // Determine which GSI to use based on category filter
+      if (category) {
+        // Use category-based GSI when filtering by category
+        const indexName =
+          sortBy === "price"
+            ? "category-price-index"
+            : "category-updatedAt-index";
+
+        queryInput = {
+          TableName: this.tableName,
+          IndexName: indexName,
+          KeyConditionExpression: "#category = :category",
+          ExpressionAttributeNames: { "#category": "category" },
+          ExpressionAttributeValues: { ":category": category },
+          Limit: limit,
+          ScanIndexForward: sortOrder === "asc",
+        };
+      } else {
+        // Use entityType-based GSI when querying all books
+        const indexName =
+          sortBy === "price"
+            ? "entityType-price-index"
+            : "entityType-updatedAt-index";
+
+        queryInput = {
+          TableName: this.tableName,
+          IndexName: indexName,
+          KeyConditionExpression: "#entityType = :entityType",
+          ExpressionAttributeNames: { "#entityType": "entityType" },
+          ExpressionAttributeValues: { ":entityType": "BOOK" },
+          Limit: limit,
+          ScanIndexForward: sortOrder === "asc",
+        };
+      }
+
+      // Build filter expressions for additional search criteria
       const filterExpressions: string[] = [];
-      const expressionAttributeNames: Record<string, string> = {};
-      const expressionAttributeValues: Record<string, any> = {};
+      const filterAttributeNames: Record<string, string> = {
+        ...queryInput.ExpressionAttributeNames,
+      };
+      const filterAttributeValues: Record<string, any> = {
+        ...queryInput.ExpressionAttributeValues,
+      };
 
       if (title) {
         filterExpressions.push("contains(#title, :title)");
-        expressionAttributeNames["#title"] = "title";
-        expressionAttributeValues[":title"] = title;
+        filterAttributeNames["#title"] = "title";
+        filterAttributeValues[":title"] = title;
       }
 
       if (author) {
         filterExpressions.push("contains(#author, :author)");
-        expressionAttributeNames["#author"] = "author";
-        expressionAttributeValues[":author"] = author;
-      }
-
-      if (category) {
-        filterExpressions.push("#category = :category");
-        expressionAttributeNames["#category"] = "category";
-        expressionAttributeValues[":category"] = category;
+        filterAttributeNames["#author"] = "author";
+        filterAttributeValues[":author"] = author;
       }
 
       if (minPrice !== undefined) {
         filterExpressions.push("#price >= :minPrice");
-        expressionAttributeNames["#price"] = "price";
-        expressionAttributeValues[":minPrice"] = minPrice;
+        filterAttributeNames["#price"] = "price";
+        filterAttributeValues[":minPrice"] = minPrice;
       }
+
       if (maxPrice !== undefined) {
         filterExpressions.push("#price <= :maxPrice");
-        expressionAttributeNames["#price"] = "price";
-        expressionAttributeValues[":maxPrice"] = maxPrice;
+        filterAttributeNames["#price"] = "price";
+        filterAttributeValues[":maxPrice"] = maxPrice;
       }
-
-      const scanInput: ScanCommandInput = {
-        TableName: this.tableName,
-        Limit: limit,
-      };
 
       if (filterExpressions.length > 0) {
-        scanInput.FilterExpression = filterExpressions.join(" AND ");
-        scanInput.ExpressionAttributeNames = expressionAttributeNames;
-        scanInput.ExpressionAttributeValues = expressionAttributeValues;
+        queryInput.FilterExpression = filterExpressions.join(" AND ");
+        queryInput.ExpressionAttributeNames = filterAttributeNames;
+        queryInput.ExpressionAttributeValues = filterAttributeValues;
       }
+
       // decoding the lastEvaluatedKey from base64 string to object as expected by DynamoDB
       if (lastEvaluatedKey) {
-        scanInput.ExclusiveStartKey = JSON.parse(
+        queryInput.ExclusiveStartKey = JSON.parse(
           Buffer.from(lastEvaluatedKey, "base64").toString()
         );
       }
 
-      const command = new ScanCommand(scanInput);
+      const command = new QueryCommand(queryInput);
       const result = await this.docClient.send(command);
 
       // Generate presigned URLs for all books with cover images
@@ -309,7 +343,7 @@ class BookService {
         : undefined;
 
       return {
-        items: (result.Items || []) as Book[],
+        items: books,
         count: result.Count || 0,
         lastEvaluatedKey: lastKey,
         hasMore: !!result.LastEvaluatedKey,

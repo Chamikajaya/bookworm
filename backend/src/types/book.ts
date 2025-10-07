@@ -2,6 +2,7 @@
 
 export interface Book {
   id: string;
+  entityType: string; // for GSI purposes
   title: string;
   category: BookCategory;
   description: string;
