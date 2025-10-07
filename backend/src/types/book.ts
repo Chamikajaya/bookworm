@@ -2,7 +2,7 @@ export interface Book {
   id: string;
   entityType: string; // for GSI purposes
   title: string;
-  titileLower?: string; // for case-insensitive search in DynamoDB
+  titleLower?: string; // for case-insensitive search in DynamoDB
   category: BookCategory;
   description: string;
   author: string;

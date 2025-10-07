@@ -32,7 +32,6 @@ class BookService {
     this.s3Service = s3Service;
   }
 
-  // ! TODO: Migrate to QUERY with GSIs instead of SCAN
   async getBookById(bookId: string): Promise<Book> {
     try {
       const command = new GetCommand({
@@ -72,7 +71,7 @@ class BookService {
         id: uuidv4(),
         entityType: "BOOK",
         title: input.title,
-        titileLower: input.title.toLowerCase(), // for case-insensitive search
+        titleLower: input.title.toLowerCase(), // for case-insensitive search
         description: input.description,
         author: input.author,
         authorLower: input.author.toLowerCase(), // for case-insensitive search
@@ -237,7 +236,7 @@ class BookService {
       );
     }
   }
-
+  // ! TODO: If integrating to DynamoDB streams with ALGOLIA, remove title / author filters,  need to index algolia index on book update / book create / book delete on dynamodb - use dynamodb streams with lambdas to do this , also when the user searches, need to call algolia search api as well
   async searchBooks(
     params: BookSearchParams
   ): Promise<PaginatedResponse<Book>> {
@@ -303,15 +302,15 @@ class BookService {
       };
 
       if (title) {
-        filterExpressions.push("contains(#title, :title)");
-        filterAttributeNames["#title"] = "title";
-        filterAttributeValues[":title"] = title;
+        filterExpressions.push("contains(#titleLower, :title)");
+        filterAttributeNames["#titleLower"] = "titleLower";
+        filterAttributeValues[":title"] = title.toLowerCase();
       }
 
       if (author) {
-        filterExpressions.push("contains(#author, :author)");
-        filterAttributeNames["#author"] = "author";
-        filterAttributeValues[":author"] = author;
+        filterExpressions.push("contains(#authorLower, :author)");
+        filterAttributeNames["#authorLower"] = "authorLower";
+        filterAttributeValues[":author"] = author.toLowerCase();
       }
 
       if (minPrice !== undefined) {
