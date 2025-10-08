@@ -41,7 +41,6 @@ export const verifyToken = (token: string): Promise<CognitoUserInfo> => {
   });
 };
 
-// ! Dangerous: Use only for non-sensitive data
 export const decodeToken = (token: string): CognitoUserInfo | null => {
   try {
     return jwt.decode(token) as CognitoUserInfo;
