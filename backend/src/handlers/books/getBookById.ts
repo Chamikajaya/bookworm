@@ -1,7 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
 import { bookService } from "../../service/bookService";
 import { logger } from "../../config/logger";
-import { errorResponse, successResponse } from "../../utils/response";
+import { successResponse } from "../../utils/response";
 import { ValidationError } from "../../utils/errors";
 import { handleError } from "../../utils/handleErrors";
 

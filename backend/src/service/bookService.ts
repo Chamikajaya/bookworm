@@ -45,7 +45,7 @@ class BookService {
       }
       const book = result.Item as Book;
 
-      // Generate presigned URL if coverImageKey exists
+      // Generate Cloudfront URL if coverImageKey exists
       if (book.coverImageKey) {
         book.coverImageUrl = await this.s3Service.generateCloudfrontUrlForView(
           book.coverImageKey
@@ -65,11 +65,10 @@ class BookService {
 
   async createBook(input: CreateBookInput): Promise<{ id: string }> {
     try {
-      console.log("Inside try block of createBook");
       const timestamp = new Date().toISOString();
       const book: Book = {
         id: uuidv4(),
-        entityType: "BOOK",
+        entityType: "BOOK", // for entity partition in GSI
         title: input.title,
         titleLower: input.title.toLowerCase(), // for case-insensitive search
         description: input.description,
@@ -78,7 +77,7 @@ class BookService {
         isbn: input.isbn,
         publisher: input.publisher,
         publishedYear: input.publishedYear,
-        language: input.language || "English",
+        language: input.language,
         pageCount: input.pageCount,
         category: input.category,
         price: input.price,
@@ -104,10 +103,8 @@ class BookService {
 
   async deleteBook(bookId: string): Promise<void> {
     try {
-      const existingBook: Book = await this.getBookById(bookId);
-      if (!existingBook) {
-        throw new NotFoundError(`Book with ID ${bookId} not found`);
-      }
+      const existingBook: Book = await this.getBookById(bookId); // will throw NotFound Error
+
       // deleting cover image from S3 if exists
       if (existingBook.coverImageKey) {
         await this.s3Service.deleteImage(existingBook.coverImageKey);
@@ -129,10 +126,8 @@ class BookService {
 
   async updateBook(bookId: string, input: UpdateBookInput): Promise<void> {
     try {
-      const existingBook: Book = await this.getBookById(bookId);
-      if (!existingBook) {
-        throw new NotFoundError(`Book with ID ${bookId} not found`);
-      }
+      const existingBook: Book = await this.getBookById(bookId); // will throw NotFoundError
+
       const updatedAt = new Date().toISOString();
 
       const updateExpressionParts: string[] = [];
@@ -236,7 +231,7 @@ class BookService {
       );
     }
   }
-  // ! TODO: If integrating to DynamoDB streams with ALGOLIA, remove title / author filters,  need to index algolia index on book update / book create / book delete on dynamodb - use dynamodb streams with lambdas to do this , also when the user searches, need to call algolia search api as well
+  // ! TODO: If integrating to DynamoDB streams with ALGOLIA, remove title / author filters,  need to index algolia index on book update / book create / book delete on dynamodb - use dynamodb streams with lambdas to do this , also when the user searches, need to call algolia search api as well + Need to reconsider how the filters are applied, to better utilize the indexes created
   async searchBooks(
     params: BookSearchParams
   ): Promise<PaginatedResponse<Book>> {
@@ -257,7 +252,6 @@ class BookService {
 
       // Determine which GSI to use based on category filter
       if (category && category !== "All") {
-        logger.info("Using category-based GSI for search");
         // Use category-based GSI when filtering by category
         const indexName =
           sortBy === "price"
@@ -274,7 +268,6 @@ class BookService {
           ScanIndexForward: sortOrder === "asc",
         };
       } else {
-        logger.info("Using entityType-based GSI for search");
         // Use entityType-based GSI when querying all books
         const indexName =
           sortBy === "price"

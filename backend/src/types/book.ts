@@ -1,6 +1,6 @@
 export interface Book {
   id: string;
-  entityType: string; // for GSI purposes
+  entityType: string; // for GSI purposes  --> "BOOK"
   title: string;
   titleLower?: string; // for case-insensitive search in DynamoDB
   category: BookCategory;
@@ -15,7 +15,7 @@ export interface Book {
   price: number;
   stockQuantity: number;
   coverImageKey?: string;
-  coverImageUrl?: string; // URL to access the cover image  - generated when needed
+  coverImageUrl?: string; // URL to access the cover image via CloudFront - generated when needed
   createdAt: string;
   updatedAt: string;
 }
