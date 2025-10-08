@@ -10,6 +10,8 @@
   "license": "ISC",
   "devDependencies": {
     "@types/aws-lambda": "^8.10.155",
+    "@types/cookie": "^0.6.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.7.0",
     "@types/uuid": "^10.0.0",
     "tsx": "^4.20.6",
@@ -21,6 +23,9 @@
     "@aws-sdk/client-s3": "^3.901.0",
     "@aws-sdk/lib-dynamodb": "^3.902.0",
     "@aws-sdk/s3-request-presigner": "^3.901.0",
+    "cookie": "^1.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.2.0",
     "uuid": "^13.0.0",
     "zod": "^4.1.11"
   }

@@ -11,7 +11,7 @@ provider:
     BOOKS_TABLE: ${self:service}-books-table-${self:provider.stage}
     BOOK_COVERS_BUCKET: ${self:service}-book-covers-bucket-${self:provider.stage}
     # # ! TODO:
-    FRONTEND_URL: ${env:FRONTEND_URL, 'https://d28jacfojat6xy.cloudfront.net'} # https://d28jacfojat6xy.cloudfront.net
+    FRONTEND_URL: ${env:FRONTEND_URL, 'http://localhost:3000'} # https://d28jacfojat6xy.cloudfront.net
     CLOUDFRONT_DOMAIN: !GetAtt BookCoversDistribution.DomainName
 
   iam:
