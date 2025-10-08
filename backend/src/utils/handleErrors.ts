@@ -9,6 +9,7 @@ import {
   AuthenticationError,
   TokenExchangeError,
   TokenRefreshError,
+  AuthorizationError,
 } from "./errors";
 import { logger } from "../config/logger";
 
@@ -43,6 +44,10 @@ export const handleError = (
 
   if (error instanceof TokenRefreshError) {
     return errorResponse("Token Refresh Failed", 401, error.message);
+  }
+
+  if (error instanceof AuthorizationError) {
+    return errorResponse("Authorization Error", 403, error.message);
   }
 
   if (error instanceof InternalServerError) {
