@@ -6,7 +6,7 @@ export interface Book {
   isbn?: string;
   publisher?: string;
   publishedYear?: number;
-  language?: string;
+  language: string;
   pageCount?: number;
   category: BookCategory;
   price: number;
@@ -43,7 +43,7 @@ export interface CreateBookInput {
   isbn?: string;
   publisher?: string;
   publishedYear?: number;
-  language?: string;
+  language: string;
   pageCount?: number;
   category: BookCategory;
   price: number;

@@ -7,6 +7,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { Book } from "@/types/bookTypes";
 import { useNavigate, useLocation } from "react-router-dom";
+import placeholder from "@/assets/book-placeholder.png";
 
 interface BookCardProps {
   book: Book;
@@ -19,7 +20,7 @@ export const BookCard = ({ book }: BookCardProps) => {
   const handleClick = () => {
     // Pass current location (including query params) as state
     navigate(`/books/${book.id}`, {
-      state: { from: `${location.pathname}${location.search}` },
+      state: { from: `${location.pathname}${location.search}` }, // location.search represents current url's query string
     });
   };
 
@@ -30,18 +31,12 @@ export const BookCard = ({ book }: BookCardProps) => {
     >
       <CardHeader className="p-0">
         <div className="aspect-[2/3] overflow-hidden rounded-t-lg bg-muted">
-          {book.coverImageUrl ? (
-            <img
-              src={book.coverImageUrl}
-              alt={book.title}
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              No Cover
-            </div>
-          )}
+          <img
+            src={book.coverImageUrl || placeholder}
+            alt={book.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+          />
         </div>
       </CardHeader>
       <CardContent className="pt-4">

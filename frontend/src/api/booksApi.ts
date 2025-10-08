@@ -12,10 +12,11 @@ export const booksApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: API_BASE_URL,
   }),
-  tagTypes: ["Books"],
+  tagTypes: ["Books"], // tags --> labels you can attach to cached data. These labels are used to tell RTK Query which pieces of data are related. This becomes extremely important for automatically refetching data when something changes (cache invalidation)
   endpoints: (builder) => ({
     // Get paginated books with search filters
     getBooks: builder.query<PaginatedBooksResponse, BookSearchParams>({
+      // <response, arguments>
       query: (params) => {
         const searchParams = new URLSearchParams();
 
@@ -34,18 +35,21 @@ export const booksApi = createApi({
 
         return `/books?${searchParams.toString()}`;
       },
-      transformResponse: (response: any) => response.data,
-      providesTags: (result) =>
+      transformResponse: (response: any) => response.data, // response => data ==> items, count, lastEvaluatedKey, hasMore
+      providesTags: (
+        result // result -> result of the query (the paginated book data)
+      ) =>
         result
           ? [
+              // * iterating over every single book in the fetched list and creating a specific tag for each one, to target individual books for cache invalidation later
               ...result.items.map(({ id }) => ({
                 type: "Books" as const,
                 id,
               })),
               { type: "Books", id: "PARTIAL-LIST" },
             ]
-          : [{ type: "Books", id: "PARTIAL-LIST" }],
-      keepUnusedDataFor: 300,
+          : [{ type: "Books", id: "PARTIAL-LIST" }], // tag for the list of books itself, useful for invalidating the entire list, for instance, after we add or delete a book, which would require a refetch of the list to show the change.
+      keepUnusedDataFor: 300, // if a user navigates away and comes back within 5 minutes, the cached data will be served instantly without a new network request
     }),
 
     // Get single book by ID

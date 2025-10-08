@@ -210,7 +210,6 @@ export const BookFilters = ({ onFiltersChange }: BookFiltersProps) => {
               value={minPrice}
               onChange={(e) => setMinPrice(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && applyFilters()}
-              className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
           </div>
 
@@ -224,7 +223,6 @@ export const BookFilters = ({ onFiltersChange }: BookFiltersProps) => {
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && applyFilters()}
-              className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
           </div>
         </div>
@@ -357,7 +355,6 @@ export const BookFilters = ({ onFiltersChange }: BookFiltersProps) => {
                         placeholder="0.00"
                         value={minPrice}
                         onChange={(e) => setMinPrice(e.target.value)}
-                        className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
                     <div className="space-y-2">
@@ -371,7 +368,6 @@ export const BookFilters = ({ onFiltersChange }: BookFiltersProps) => {
                         placeholder="999.99"
                         value={maxPrice}
                         onChange={(e) => setMaxPrice(e.target.value)}
-                        className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                     </div>
                   </div>
@@ -405,61 +401,26 @@ export const BookFilters = ({ onFiltersChange }: BookFiltersProps) => {
           {searchQuery && (
             <Badge variant="secondary" className="gap-1">
               Title: {searchQuery}
-              <X
-                className="h-3 w-3 cursor-pointer"
-                onClick={() => {
-                  setSearchQuery("");
-                  applyFilters();
-                }}
-              />
             </Badge>
           )}
           {author && (
             <Badge variant="secondary" className="gap-1">
               Author: {author}
-              <X
-                className="h-3 w-3 cursor-pointer"
-                onClick={() => {
-                  setAuthor("");
-                  applyFilters();
-                }}
-              />
             </Badge>
           )}
           {category !== "all" && (
             <Badge variant="secondary" className="gap-1">
               Category: {category}
-              <X
-                className="h-3 w-3 cursor-pointer"
-                onClick={() => {
-                  setCategory("all");
-                  applyFilters();
-                }}
-              />
             </Badge>
           )}
           {minPrice && (
             <Badge variant="secondary" className="gap-1">
               Min: ${minPrice}
-              <X
-                className="h-3 w-3 cursor-pointer"
-                onClick={() => {
-                  setMinPrice("");
-                  applyFilters();
-                }}
-              />
             </Badge>
           )}
           {maxPrice && (
             <Badge variant="secondary" className="gap-1">
               Max: ${maxPrice}
-              <X
-                className="h-3 w-3 cursor-pointer"
-                onClick={() => {
-                  setMaxPrice("");
-                  applyFilters();
-                }}
-              />
             </Badge>
           )}
         </div>
