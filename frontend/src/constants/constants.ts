@@ -1,6 +1,7 @@
 import type { BookCategory } from "@/types/bookTypes";
 
 export const ITEMS_PER_PAGE = 10;
+
 export const BOOK_CATEGORIES: BookCategory[] = [
   "Fiction",
   "Non-Fiction",

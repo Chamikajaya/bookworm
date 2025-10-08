@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { BookCategory, SortBy, SortOrder } from "@/types/bookTypes";
 
+type FilterKey = "title" | "author" | "category" | "minPrice" | "maxPrice";
+
 export const useBookFilters = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -108,7 +110,56 @@ export const useBookFilters = () => {
     setSearchParams({ page: "1", sortBy: "updatedAt", sortOrder: "desc" });
   };
 
-  // Fixed: Explicitly convert to boolean
+  // when clicked on active filter badges
+  const removeFilter = (filterKey: FilterKey) => {
+    // Clear the specific filter from local state
+    switch (filterKey) {
+      case "title":
+        setSearchQuery("");
+        break;
+      case "author":
+        setAuthorInput("");
+        break;
+      case "category":
+        setCategoryInput("all");
+        break;
+      case "minPrice":
+        setMinPriceInput("");
+        break;
+      case "maxPrice":
+        setMaxPriceInput("");
+        break;
+    }
+
+    // Update URL params
+    const params: Record<string, string> = { page: "1" }; // reset to first page
+    // Only include filters that are not being removed
+    if (filterKey !== "title" && searchQuery.trim()) {
+      params.title = searchQuery.trim();
+    }
+    if (filterKey !== "author" && authorInput.trim()) {
+      params.author = authorInput.trim();
+    }
+    if (filterKey !== "category" && categoryInput !== "all") {
+      params.category = categoryInput;
+    }
+    if (filterKey !== "minPrice" && minPriceInput) {
+      params.minPrice = minPriceInput;
+    }
+    if (filterKey !== "maxPrice" && maxPriceInput) {
+      params.maxPrice = maxPriceInput;
+    }
+
+    const [sortByValue, sortOrderValue] = sortByInput.split("-") as [
+      SortBy,
+      SortOrder
+    ];
+    params.sortBy = sortByValue;
+    params.sortOrder = sortOrderValue;
+
+    setSearchParams(params);
+  };
+
   const hasActiveFilters = Boolean(
     searchQuery ||
       authorInput ||
@@ -154,6 +205,7 @@ export const useBookFilters = () => {
     // Actions
     applyFilters,
     clearFilters,
+    removeFilter,
     // Status
     hasActiveFilters,
     activeFilterCount,

@@ -23,6 +23,7 @@ export const BookFilters = ({ onFiltersChange }: BookFiltersProps) => {
     setSortBy,
     applyFilters,
     clearFilters,
+    removeFilter,
     hasActiveFilters,
     activeFilterCount,
   } = useBookFilters();
@@ -34,6 +35,13 @@ export const BookFilters = ({ onFiltersChange }: BookFiltersProps) => {
 
   const handleClearFilters = () => {
     clearFilters();
+    onFiltersChange?.();
+  };
+
+  const handleRemoveFilter = (
+    filterKey: "title" | "author" | "category" | "minPrice" | "maxPrice"
+  ) => {
+    removeFilter(filterKey);
     onFiltersChange?.();
   };
 
@@ -67,6 +75,7 @@ export const BookFilters = ({ onFiltersChange }: BookFiltersProps) => {
         minPrice={minPrice}
         maxPrice={maxPrice}
         hasActiveFilters={hasActiveFilters}
+        onRemoveFilter={handleRemoveFilter}
       />
     </div>
   );
