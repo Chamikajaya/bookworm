@@ -1,10 +1,11 @@
-import { useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import type { BookCategory, SortBy, SortOrder } from "@/types/bookTypes";
 
 export const useBookFilters = () => {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
 
+  // Read from URL
   const title = searchParams.get("title") || undefined;
   const author = searchParams.get("author") || undefined;
   const category = searchParams.get("category") as BookCategory | undefined;
@@ -17,6 +18,22 @@ export const useBookFilters = () => {
   const sortBy = (searchParams.get("sortBy") || "updatedAt") as SortBy;
   const sortOrder = (searchParams.get("sortOrder") || "desc") as SortOrder;
 
+  // Local state for form inputs
+  const [searchQuery, setSearchQuery] = useState(title || "");
+  const [authorInput, setAuthorInput] = useState(author || "");
+  const [categoryInput, setCategoryInput] = useState<BookCategory | "all">(
+    category || "all"
+  );
+  const [minPriceInput, setMinPriceInput] = useState(
+    minPrice?.toString() || ""
+  );
+  const [maxPriceInput, setMaxPriceInput] = useState(
+    maxPrice?.toString() || ""
+  );
+  const [sortByInput, setSortByInput] = useState<`${SortBy}-${SortOrder}`>(
+    `${sortBy}-${sortOrder}` as `${SortBy}-${SortOrder}`
+  );
+
   const prevFiltersRef = useRef({
     title,
     author,
@@ -26,6 +43,16 @@ export const useBookFilters = () => {
     sortBy,
     sortOrder,
   });
+
+  // Sync local state with URL changes
+  useEffect(() => {
+    setSearchQuery(title || "");
+    setAuthorInput(author || "");
+    setCategoryInput(category || "all");
+    setMinPriceInput(minPrice?.toString() || "");
+    setMaxPriceInput(maxPrice?.toString() || "");
+    setSortByInput(`${sortBy}-${sortOrder}` as `${SortBy}-${SortOrder}`);
+  }, [title, author, category, minPrice, maxPrice, sortBy, sortOrder]);
 
   const checkFiltersChanged = () => {
     const prev = prevFiltersRef.current;
@@ -52,7 +79,56 @@ export const useBookFilters = () => {
     };
   };
 
+  const applyFilters = () => {
+    const params: Record<string, string> = { page: "1" };
+
+    if (searchQuery.trim()) params.title = searchQuery.trim();
+    if (authorInput.trim()) params.author = authorInput.trim();
+    if (categoryInput !== "all") params.category = categoryInput;
+    if (minPriceInput) params.minPrice = minPriceInput;
+    if (maxPriceInput) params.maxPrice = maxPriceInput;
+
+    const [sortByValue, sortOrderValue] = sortByInput.split("-") as [
+      SortBy,
+      SortOrder
+    ];
+    params.sortBy = sortByValue;
+    params.sortOrder = sortOrderValue;
+
+    setSearchParams(params);
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setAuthorInput("");
+    setCategoryInput("all");
+    setMinPriceInput("");
+    setMaxPriceInput("");
+    setSortByInput("updatedAt-desc");
+    setSearchParams({ page: "1", sortBy: "updatedAt", sortOrder: "desc" });
+  };
+
+  // Fixed: Explicitly convert to boolean
+  const hasActiveFilters = Boolean(
+    searchQuery ||
+      authorInput ||
+      categoryInput !== "all" ||
+      minPriceInput ||
+      maxPriceInput ||
+      sortByInput !== "updatedAt-desc"
+  );
+
+  const activeFilterCount = [
+    Boolean(searchQuery),
+    Boolean(authorInput),
+    categoryInput !== "all",
+    Boolean(minPriceInput),
+    Boolean(maxPriceInput),
+    sortByInput !== "updatedAt-desc",
+  ].filter(Boolean).length;
+
   return {
+    // URL-synced filters (for API queries)
     filters: {
       title,
       author,
@@ -62,6 +138,25 @@ export const useBookFilters = () => {
       sortBy,
       sortOrder,
     },
+    // Local form state
+    searchQuery,
+    setSearchQuery,
+    author: authorInput,
+    setAuthor: setAuthorInput,
+    category: categoryInput,
+    setCategory: setCategoryInput,
+    minPrice: minPriceInput,
+    setMinPrice: setMinPriceInput,
+    maxPrice: maxPriceInput,
+    setMaxPrice: setMaxPriceInput,
+    sortBy: sortByInput,
+    setSortBy: setSortByInput,
+    // Actions
+    applyFilters,
+    clearFilters,
+    // Status
+    hasActiveFilters,
+    activeFilterCount,
     checkFiltersChanged,
     updateFiltersRef,
   };

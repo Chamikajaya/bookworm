@@ -9,8 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { usePaginationState } from "@/hooks/usePaginationState";
 import { useBookFilters } from "@/hooks/useBookFilters";
-
-const ITEMS_PER_PAGE = 12;
+import { ITEMS_PER_PAGE } from "@/constants/constants";
 
 export const BookGrid = () => {
   const {

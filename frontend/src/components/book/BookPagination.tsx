@@ -13,9 +13,9 @@ interface BookPaginationProps {
   maxKnownPage: number;
   hasNextPage: boolean;
   hasPreviousPage: boolean;
-  onPageChange: (page: number) => void;
-  onNextPage: () => void;
-  onPreviousPage: () => void;
+  onPageChange: (page: number) => void; // when clicked on a specific page number
+  onNextPage: () => void; // when clicked on next button
+  onPreviousPage: () => void; // when clicked on previous button
 }
 
 export const BookPagination = ({
@@ -32,6 +32,7 @@ export const BookPagination = ({
     const maxVisiblePages = 5;
 
     if (maxKnownPage <= maxVisiblePages) {
+      // just show all pages we know about if total pages are 5 or less
       for (let i = 1; i <= maxKnownPage; i++) {
         pages.push(i);
       }
