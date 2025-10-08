@@ -6,12 +6,20 @@ import { ValidationError } from "../../utils/errors";
 import { bookSchema } from "../../validation/bookSchema";
 import { handleError } from "../../utils/handleErrors";
 import { successResponse } from "../../utils/response";
+import { authenticate } from "../../middleware/auth";
+import { requireRole } from "../../middleware/rbac";
+import { UserRole } from "../../types/user";
 
 export async function handler(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   try {
     logger.info("Create book request received.", { body: event.body });
+
+    // authentication & rbac
+    const user = await authenticate(event);
+    requireRole(user, UserRole.ADMIN);
+
     if (!event.body) {
       throw new ValidationError("Request body is required");
     }

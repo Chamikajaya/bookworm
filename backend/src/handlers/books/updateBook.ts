@@ -6,6 +6,9 @@ import { ValidationError } from "../../utils/errors";
 import { updateBookSchema } from "../../validation/updateBookSchema";
 import { handleError } from "../../utils/handleErrors";
 import { successResponse } from "../../utils/response";
+import { UserRole } from "../../types/user";
+import { authenticate } from "../../middleware/auth";
+import { requireRole } from "../../middleware/rbac";
 
 export async function handler(
   event: APIGatewayProxyEvent
@@ -16,6 +19,10 @@ export async function handler(
       bookId,
       body: event.body,
     });
+
+    // authentication & rbac
+    const user = await authenticate(event);
+    requireRole(user, UserRole.ADMIN);
 
     if (!bookId) {
       throw new ValidationError("Book ID is required");

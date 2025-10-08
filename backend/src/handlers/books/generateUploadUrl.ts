@@ -9,6 +9,9 @@ import {
   UploadUrlRequest,
   uploadUrlRequestSchema,
 } from "../../validation/uploadUrlRequestSchema";
+import { UserRole } from "../../types/user";
+import { requireRole } from "../../middleware/rbac";
+import { authenticate } from "../../middleware/auth";
 
 export async function handler(
   event: APIGatewayProxyEvent
@@ -18,6 +21,10 @@ export async function handler(
     logger.info("Generate upload URL request received", {
       bookId,
     });
+
+    // authentication & rbac
+    const user = await authenticate(event);
+    requireRole(user, UserRole.ADMIN);
 
     if (!bookId) {
       throw new ValidationError("Book ID is required");

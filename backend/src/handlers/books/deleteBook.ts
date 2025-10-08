@@ -4,6 +4,9 @@ import { logger } from "../../config/logger";
 import { handleError } from "../../utils/handleErrors";
 import { ValidationError } from "../../utils/errors";
 import { successResponse } from "../../utils/response";
+import { authenticate } from "../../middleware/auth";
+import { UserRole } from "../../types/user";
+import { requireRole } from "../../middleware/rbac";
 
 export async function handler(
   event: APIGatewayProxyEvent
@@ -11,6 +14,10 @@ export async function handler(
   try {
     const bookId = event.pathParameters?.id;
     logger.info("Delete book by id request received for id " + bookId);
+
+    // authentication & rbac
+    const user = await authenticate(event);
+    requireRole(user, UserRole.ADMIN);
 
     if (!bookId) {
       throw new ValidationError("Book ID is required");
