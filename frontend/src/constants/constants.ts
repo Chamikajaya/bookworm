@@ -2,6 +2,8 @@ import type { BookCategory } from "@/types/bookTypes";
 
 export const ITEMS_PER_PAGE = 10;
 
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export const BOOK_CATEGORIES: BookCategory[] = [
   "Fiction",
   "Non-Fiction",

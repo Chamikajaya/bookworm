@@ -118,11 +118,12 @@ export const DesktopFilters = ({
           <Input
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             placeholder="0.00"
             value={minPrice}
             onChange={(e) => setMinPrice(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && applyFilters()}
+            className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
         </div>
 
@@ -131,11 +132,12 @@ export const DesktopFilters = ({
           <Input
             type="number"
             min="0"
-            step="0.01"
+            step="1"
             placeholder="999.99"
             value={maxPrice}
             onChange={(e) => setMaxPrice(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && applyFilters()}
+            className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
         </div>
       </div>

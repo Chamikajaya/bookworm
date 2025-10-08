@@ -107,7 +107,7 @@ export const MobileFilters = ({
               </SheetDescription>
             </SheetHeader>
 
-            <div className="space-y-6 mt-6">
+            <div className="space-y-6 mt-6 p-4">
               {/* Sort */}
               <div className="space-y-2">
                 <Label>Sort By</Label>
@@ -174,10 +174,11 @@ export const MobileFilters = ({
                     <Input
                       type="number"
                       min="0"
-                      step="0.01"
+                      step="1"
                       placeholder="0.00"
                       value={minPrice}
                       onChange={(e) => setMinPrice(e.target.value)}
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                   <div className="space-y-2">
@@ -187,10 +188,11 @@ export const MobileFilters = ({
                     <Input
                       type="number"
                       min="0"
-                      step="0.01"
+                      step="1"
                       placeholder="999.99"
                       value={maxPrice}
                       onChange={(e) => setMaxPrice(e.target.value)}
+                      className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                   </div>
                 </div>

@@ -1,6 +1,6 @@
-import { DesktopFilters } from "./filters/DesktopFilters";
-import { MobileFilters } from "./filters/MobileFilters";
-import { ActiveFilterBadges } from "./filters/ActiveFilterBadges";
+import { DesktopFilters } from "./DesktopFilters";
+import { MobileFilters } from "./MobileFilters";
+import { ActiveFilterBadges } from "./ActiveFilterBadges";
 import { useBookFilters } from "@/hooks/useBookFilters";
 
 interface BookFiltersProps {

@@ -74,17 +74,12 @@ export const AddBook = () => {
           contentType: imageFile.type,
         }).unwrap();
 
-        console.log("Generated upload URL:", response);
-
         // Upload to S3
-        console.log("Just before Uploading to S3...");
         await uploadToS3({
           url: response.data.uploadUrl,
           file: imageFile,
         }).unwrap();
 
-        console.log("Uploaded to S3 successfully.");
-        console.log("Just before updating book image...");
         // Update book with image key
         await updateBookImage({
           bookId,

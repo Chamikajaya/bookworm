@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/constants/constants";
 import type {
   CreateBookInput,
   UploadUrlRequest,
@@ -5,14 +6,12 @@ import type {
 } from "@/types/bookTypes";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: fetchBaseQuery({
     baseUrl: API_BASE_URL,
   }),
-  tagTypes: ["Books"],
+  tagTypes: ["Books"], // admin api will not provide any tags itself, however it needs to know this tag type exists so it can invalidate tags provided by other API slices (like the booksApi).
   endpoints: (builder) => ({
     // Create a book
     createBook: builder.mutation<{ message: string }, CreateBookInput>({
@@ -21,8 +20,9 @@ export const adminApi = createApi({
         method: "POST",
         body: book,
       }),
-      invalidatesTags: [{ type: "Books", id: "PARTIAL-LIST" }],
+      invalidatesTags: [{ type: "Books", id: "PARTIAL-LIST" }], // After this createBook mutation completes successfully, any cached data that is tagged with { type: "Books", id: "PARTIAL-LIST" } is now out-of-date.
     }),
+
     // get the pre-signed url for image upload
     generateUploadUrl: builder.mutation<
       UploadUrlResponse,
@@ -34,6 +34,7 @@ export const adminApi = createApi({
         body,
       }),
     }),
+
     // update book image
     updateBookImage: builder.mutation<
       void,
@@ -45,9 +46,10 @@ export const adminApi = createApi({
         body: { coverImageKey },
       }),
       invalidatesTags: (_result, _error, { bookId }) => [
-        { type: "Books", id: bookId },
+        { type: "Books", id: bookId }, // invalidate the specific book that was updated
       ],
     }),
+
     // upload to s3 via the received pre-signed url - direct s3 bucket upload not via our api
     uploadToS3: builder.mutation<void, { url: string; file: File }>({
       queryFn: async ({ url, file }) => {

@@ -16,25 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BOOK_CATEGORIES } from "@/constants/constants";
 
 interface BookFormStep1Props {
   form: UseFormReturn<any>;
   onNext: () => void;
 }
-
-const BOOK_CATEGORIES = [
-  "Fiction",
-  "Non-Fiction",
-  "Science",
-  "History",
-  "Biography",
-  "Children",
-  "Fantasy",
-  "Mystery",
-  "Romance",
-  "Self-Help",
-  "Health",
-] as const;
 
 export const BookFormStepOne = ({ form, onNext }: BookFormStep1Props) => {
   const handleNext = async () => {

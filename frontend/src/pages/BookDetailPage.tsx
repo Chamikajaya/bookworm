@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, AlertCircle } from "lucide-react";
+import placeholder from "@/assets/book-placeholder.png";
 
 export const BookDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -84,22 +85,12 @@ export const BookDetailPage = () => {
 
       <main className="container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Book Cover */}
-          {/* TODO: Display a placeholder image when cover is not available */}
           <div>
-            {book.coverImageUrl ? (
-              <img
-                src={book.coverImageUrl}
-                alt={book.title}
-                className="w-full max-w-md mx-auto rounded-lg shadow-lg"
-              />
-            ) : (
-              <div className="aspect-[2/3] w-full max-w-md mx-auto bg-muted rounded-lg flex items-center justify-center">
-                <span className="text-muted-foreground">
-                  No Cover Available
-                </span>
-              </div>
-            )}
+            <img
+              src={book.coverImageUrl || placeholder}
+              alt={book.title}
+              className="w-full max-w-md mx-auto rounded-lg shadow-lg"
+            />
           </div>
 
           {/* Book Details */}

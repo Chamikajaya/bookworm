@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useGetBooksQuery } from "@/api/booksApi";
-import { BookFilters } from "./BookFilters";
+import { BookFilters } from "./filters/BookFilters";
 import { BookGridContent } from "./BookGridContent";
 import { BookPagination } from "./BookPagination";
 import { BookSkeleton } from "./BookSkeleton";
