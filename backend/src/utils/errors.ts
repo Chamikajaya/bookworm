@@ -25,6 +25,27 @@ export class S3Error extends Error {
   }
 }
 
+export class AuthenticationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "AuthenticationError";
+  }
+}
+
+export class TokenExchangeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TokenExchangeError";
+  }
+}
+
+export class TokenRefreshError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "TokenRefreshError";
+  }
+}
+
 export class InternalServerError extends Error {
   constructor(message: string) {
     super(message);

@@ -6,6 +6,9 @@ import {
   DatabaseError,
   InternalServerError,
   S3Error,
+  AuthenticationError,
+  TokenExchangeError,
+  TokenRefreshError,
 } from "./errors";
 import { logger } from "../config/logger";
 
@@ -28,6 +31,18 @@ export const handleError = (
   }
   if (error instanceof S3Error) {
     return errorResponse("S3 Error", 500, error.message);
+  }
+
+  if (error instanceof AuthenticationError) {
+    return errorResponse("Authentication Error", 401, error.message);
+  }
+
+  if (error instanceof TokenExchangeError) {
+    return errorResponse("Token Exchange Failed", 401, error.message);
+  }
+
+  if (error instanceof TokenRefreshError) {
+    return errorResponse("Token Refresh Failed", 401, error.message);
   }
 
   if (error instanceof InternalServerError) {

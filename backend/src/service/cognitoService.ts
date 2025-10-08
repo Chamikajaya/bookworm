@@ -2,6 +2,7 @@ import axios from "axios";
 import { CognitoTokens, CognitoUserInfo } from "../types/auth";
 import { cognitoConfig } from "../config/cognito";
 import { decodeToken } from "../utils/jwt";
+import { TokenExchangeError, TokenRefreshError } from "../utils/errors";
 
 export class CognitoService {
   private tokenEndpoint: string;
@@ -41,10 +42,8 @@ export class CognitoService {
         expiresIn: response.data.expires_in,
       };
     } catch (error: any) {
-      throw new Error(
-        `Failed to exchange code: ${
-          error.response?.data?.error || error.message
-        }`
+      throw new TokenExchangeError(
+        error.response?.data?.error || error.message
       );
     }
   }
@@ -72,11 +71,7 @@ export class CognitoService {
         expiresIn: response.data.expires_in,
       };
     } catch (error: any) {
-      throw new Error(
-        `Failed to refresh token: ${
-          error.response?.data?.error || error.message
-        }`
-      );
+      throw new TokenRefreshError(error.response?.data?.error || error.message);
     }
   }
 
