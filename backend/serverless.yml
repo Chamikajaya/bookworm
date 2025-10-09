@@ -16,16 +16,19 @@ provider:
     COGNITO_USER_POOL_ID: !Ref CognitoUserPool
     COGNITO_CLIENT_ID: !Ref CognitoUserPoolClient
     COOKIE_DOMAIN: ${env:COOKIE_DOMAIN, 'localhost'} # ? When deployed to cloudfront ?
-
-    # from SSM Parameter Store
-    GOOGLE_CLIENT_ID: ${ssm:/bookworm/${self:provider.stage}/google-client-id}
-    GOOGLE_CLIENT_SECRET: ${ssm:/bookworm/${self:provider.stage}/google-client-secret~true}
-    ADMIN_EMAIL: ${ssm:/bookworm/${self:provider.stage}/admin-email}
+    # Add STAGE for runtime secret fetching
+    STAGE: ${self:provider.stage}
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    COGNITO_DOMAIN:
+      Fn::Sub:
+        - "https://${Domain}.auth.${AWS::Region}.amazoncognito.com"
+        - Domain: bookworm-${self:provider.stage}-${sls:instanceId}
 
   iam:
     # IAM role that gets attached for the Lambda functions
     role:
       statements:
+        # Book Table permissions
         - Effect: Allow
           Action:
             - dynamodb:PutItem
@@ -37,6 +40,19 @@ provider:
           Resource:
             - !GetAtt BooksTable.Arn
             - !Sub "${BooksTable.Arn}/index/*"
+
+        # User Table permissions
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Query
+          Resource:
+            - !GetAtt UsersTable.Arn
+            - !Sub "${UsersTable.Arn}/index/*" # For email-index GSI
+
         # s3 permissions
         - Effect: Allow
           Action:
@@ -60,24 +76,12 @@ provider:
           Resource:
             - !GetAtt CognitoUserPool.Arn
 
-        # SSM Parameter Store permissions
+        # AWS Secrets Manager permissions (RUNTIME FETCHING)
         - Effect: Allow
           Action:
-            - ssm:GetParameter
-            - ssm:GetParameters
+            - secretsmanager:GetSecretValue
           Resource:
-            - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/bookworm/${self:provider.stage}/*"
-
-        # KMS permissions for decrypting SecureString parameters
-        - Effect: Allow
-          Action:
-            - kms:Decrypt
-          Resource:
-            - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*"
-          Condition:
-            StringEquals:
-              kms:ViaService:
-                - !Sub "ssm.${AWS::Region}.amazonaws.com"
+            - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:bookworm/${self:provider.stage}/*"
 
 functions:
   # Auth Related Endpoints
@@ -242,7 +246,6 @@ resources:
         GenerateSecret: false
         ExplicitAuthFlows:
           - ALLOW_REFRESH_TOKEN_AUTH
-          - ALLOW_USER_SRP_AUTH
         SupportedIdentityProviders:
           - Google
         AllowedOAuthFlows:
@@ -259,9 +262,9 @@ resources:
           - ${self:provider.environment.FRONTEND_URL}
           - http://localhost:3000
         PreventUserExistenceErrors: ENABLED
-        RefreshTokenValidity: 7
-        AccessTokenValidity: 60
-        IdTokenValidity: 60
+        RefreshTokenValidity: 7 # days
+        AccessTokenValidity: 60 # minutes
+        IdTokenValidity: 60 # minutes
         TokenValidityUnits:
           RefreshToken: days
           AccessToken: minutes
@@ -271,10 +274,10 @@ resources:
     CognitoUserPoolDomain:
       Type: AWS::Cognito::UserPoolDomain
       Properties:
-        Domain: ${self:service}-${self:provider.stage}-${sls:instanceId}
+        Domain: bookworm-${self:provider.stage}-${sls:instanceId}
         UserPoolId: !Ref CognitoUserPool
 
-    # Google Identity Provider
+    # Google Identity Provider - connects Cognito to Google OAuth
     CognitoIdentityProviderGoogle:
       Type: AWS::Cognito::UserPoolIdentityProvider
       Properties:
@@ -282,8 +285,9 @@ resources:
         ProviderName: Google
         ProviderType: Google
         ProviderDetails:
-          client_id: ${ssm:/bookworm/${self:provider.stage}/google-client-id}
-          client_secret: ${ssm:/bookworm/${self:provider.stage}/google-client-secret~true}
+          # Secrets are stored in AWS Secrets Manager
+          client_id: !Sub "{{resolve:secretsmanager:bookworm/${self:provider.stage}/google-oauth:SecretString:client_id}}"
+          client_secret: !Sub "{{resolve:secretsmanager:bookworm/${self:provider.stage}/google-oauth:SecretString:client_secret}}"
           authorize_scopes: "email openid profile"
         AttributeMapping:
           email: email
@@ -492,6 +496,9 @@ resources:
         Name: ${self:service}-${self:provider.stage}-UserPoolClientId
 
     CognitoUserPoolDomain:
-      Value: !Sub "https://${CognitoUserPoolDomain}.auth.${self:provider.region}.amazoncognito.com"
+      Value: !Sub
+        - "https://${Domain}.auth.${Region}.amazoncognito.com"
+        - Domain: bookworm-${self:provider.stage}-${sls:instanceId}
+          Region: ${self:provider.region}
       Export:
         Name: ${self:service}-${self:provider.stage}-UserPoolDomain

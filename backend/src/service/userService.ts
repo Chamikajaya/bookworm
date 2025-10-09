@@ -9,20 +9,20 @@ import { getDynamoDBClient } from "../config/dynamodb";
 import { User, UpdateUserInput, UserRole } from "../types/user";
 import { CognitoUserInfo } from "../types/auth";
 import { DatabaseError, NotFoundError } from "../utils/errors";
+import { getAdminEmail } from "../utils/secrets";
 
 export class UserService {
   private docClient: DynamoDBDocumentClient;
   private tableName: string;
-  private adminEmail: string;
 
   constructor() {
     this.docClient = getDynamoDBClient();
     this.tableName = process.env.USERS_TABLE!;
-    this.adminEmail = process.env.ADMIN_EMAIL!;
   }
 
-  private determineRole(email: string): UserRole {
-    return email.toLowerCase() === this.adminEmail.toLowerCase()
+  private async determineRole(email: string): Promise<UserRole> {
+    const adminEmail = await getAdminEmail();
+    return email.toLowerCase() === adminEmail.toLowerCase()
       ? UserRole.ADMIN
       : UserRole.CUSTOMER;
   }
@@ -30,7 +30,7 @@ export class UserService {
   async createUser(cognitoUser: CognitoUserInfo): Promise<User> {
     try {
       const timestamp = new Date().toISOString();
-      const role = this.determineRole(cognitoUser.email);
+      const role = await this.determineRole(cognitoUser.email);
 
       const user: User = {
         userId: cognitoUser.sub,

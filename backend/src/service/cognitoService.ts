@@ -3,16 +3,24 @@ import { CognitoTokens, CognitoUserInfo } from "../types/auth";
 import { cognitoConfig } from "../config/cognito";
 import { decodeToken } from "../utils/jwt";
 import { TokenExchangeError, TokenRefreshError } from "../utils/errors";
+import { logger } from "../config/logger";
 
 export class CognitoService {
   private tokenEndpoint: string;
 
-  //   ! TODO:
   constructor() {
+    // Use the domain from outputs (will be set after first deployment)
     const domain =
       process.env.COGNITO_DOMAIN ||
-      `https://bookworm-dev.auth.${cognitoConfig.region}.amazoncognito.com`;
+      `https://bookworm-${process.env.STAGE || "dev"}-${
+        process.env.INSTANCE_ID || "unknown"
+      }.auth.${cognitoConfig.region}.amazoncognito.com`;
+
     this.tokenEndpoint = `${domain}/oauth2/token`;
+
+    logger.info("Cognito service initialized", {
+      tokenEndpoint: this.tokenEndpoint,
+    });
   }
 
   async exchangeCodeForTokens(
@@ -20,11 +28,20 @@ export class CognitoService {
     redirectUri: string
   ): Promise<CognitoTokens> {
     try {
+      // !  Use COGNITO_CLIENT_ID from environment, not Google's client_id!
+      const cognitoClientId = cognitoConfig.clientId; // This uses process.env.COGNITO_CLIENT_ID
+
+      logger.info("Token exchange attempt", {
+        tokenEndpoint: this.tokenEndpoint,
+        clientId: cognitoClientId,
+        redirectUri,
+      });
+
       const response = await axios.post(
         this.tokenEndpoint,
         new URLSearchParams({
           grant_type: "authorization_code",
-          client_id: cognitoConfig.clientId,
+          client_id: cognitoClientId, // Use Cognito's client ID
           code,
           redirect_uri: redirectUri,
         }).toString(),
@@ -42,6 +59,10 @@ export class CognitoService {
         expiresIn: response.data.expires_in,
       };
     } catch (error: any) {
+      logger.error("Token exchange failed", {
+        error: error.response?.data || error.message,
+        status: error.response?.status,
+      });
       throw new TokenExchangeError(
         error.response?.data?.error || error.message
       );
@@ -66,11 +87,14 @@ export class CognitoService {
 
       return {
         accessToken: response.data.access_token,
-        refreshToken: refreshToken, // Refresh token doesn't change
+        refreshToken: refreshToken,
         idToken: response.data.id_token,
         expiresIn: response.data.expires_in,
       };
     } catch (error: any) {
+      logger.error("Token refresh failed", {
+        error: error.response?.data || error.message,
+      });
       throw new TokenRefreshError(error.response?.data?.error || error.message);
     }
   }
