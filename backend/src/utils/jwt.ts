@@ -26,8 +26,8 @@ export const verifyToken = (token: string): Promise<CognitoUserInfo> => {
       token,
       getKey,
       {
+        // access token type issues by cognito does not have an audience claim
         issuer: cognitoConfig.issuer,
-        audience: cognitoConfig.clientId,
         algorithms: ["RS256"],
       },
       (err, decoded) => {

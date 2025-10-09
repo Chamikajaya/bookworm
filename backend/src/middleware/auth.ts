@@ -23,10 +23,13 @@ export const authenticate = async (
 
   try {
     // verify token and fetch user
+    console.log("Before verifyToken");
     const decoded = await verifyToken(accessToken);
+    console.log("After verifyToken", decoded);
     const user = await userService.getUserById(decoded.sub); // cognito sub is the user id in users dynamoDB table
     return user;
   } catch (error) {
+    console.error("Authentication error:", error);
     throw new AuthenticationError("Invalid or expired token");
   }
 };

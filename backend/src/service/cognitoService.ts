@@ -12,9 +12,9 @@ export class CognitoService {
     // Use the domain from outputs (will be set after first deployment)
     const domain =
       process.env.COGNITO_DOMAIN ||
-      `https://bookworm-${process.env.STAGE || "dev"}-${
-        process.env.INSTANCE_ID || "unknown"
-      }.auth.${cognitoConfig.region}.amazoncognito.com`;
+      `https://bookworm-${process.env.STAGE || "dev"}.auth.${
+        cognitoConfig.region
+      }.amazoncognito.com`;
 
     this.tokenEndpoint = `${domain}/oauth2/token`;
 

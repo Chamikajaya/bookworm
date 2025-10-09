@@ -22,7 +22,7 @@ provider:
     COGNITO_DOMAIN:
       Fn::Sub:
         - "https://${Domain}.auth.${AWS::Region}.amazoncognito.com"
-        - Domain: bookworm-${self:provider.stage}-${sls:instanceId}
+        - Domain: bookworm-shop-${self:provider.stage}
 
   iam:
     # IAM role that gets attached for the Lambda functions
@@ -273,8 +273,11 @@ resources:
     # Cognito User Pool Domain
     CognitoUserPoolDomain:
       Type: AWS::Cognito::UserPoolDomain
+      DependsOn:
+        - CognitoUserPool
+        - CognitoUserPoolClient
       Properties:
-        Domain: bookworm-${self:provider.stage}-${sls:instanceId}
+        Domain: bookworm-shop-${self:provider.stage}
         UserPoolId: !Ref CognitoUserPool
 
     # Google Identity Provider - connects Cognito to Google OAuth
@@ -498,7 +501,7 @@ resources:
     CognitoUserPoolDomain:
       Value: !Sub
         - "https://${Domain}.auth.${Region}.amazoncognito.com"
-        - Domain: bookworm-${self:provider.stage}-${sls:instanceId}
+        - Domain: bookworm-shop-${self:provider.stage}
           Region: ${self:provider.region}
       Export:
         Name: ${self:service}-${self:provider.stage}-UserPoolDomain
