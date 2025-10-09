@@ -10,12 +10,7 @@ export class CognitoService {
 
   constructor() {
     // Use the domain from outputs (will be set after first deployment)
-    const domain =
-      process.env.COGNITO_DOMAIN ||
-      `https://bookworm-${process.env.STAGE || "dev"}.auth.${
-        cognitoConfig.region
-      }.amazoncognito.com`;
-
+    const domain = process.env.COGNITO_DOMAIN;
     this.tokenEndpoint = `${domain}/oauth2/token`;
 
     logger.info("Cognito service initialized", {
@@ -23,13 +18,13 @@ export class CognitoService {
     });
   }
 
+  // Exchange authorization code for tokens - id, access, refresh
   async exchangeCodeForTokens(
     code: string,
     redirectUri: string
   ): Promise<CognitoTokens> {
     try {
-      // !  Use COGNITO_CLIENT_ID from environment, not Google's client_id!
-      const cognitoClientId = cognitoConfig.clientId; // This uses process.env.COGNITO_CLIENT_ID
+      const cognitoClientId = cognitoConfig.clientId;
 
       logger.info("Token exchange attempt", {
         tokenEndpoint: this.tokenEndpoint,
@@ -69,6 +64,7 @@ export class CognitoService {
     }
   }
 
+  // Refresh access token  and id token using existing refresh token
   async refreshAccessToken(refreshToken: string): Promise<CognitoTokens> {
     try {
       const response = await axios.post(

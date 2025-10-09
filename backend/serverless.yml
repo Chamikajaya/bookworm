@@ -11,14 +11,13 @@ provider:
     BOOKS_TABLE: ${self:service}-books-table-${self:provider.stage}
     USERS_TABLE: ${self:service}-users-table-${self:provider.stage}
     BOOK_COVERS_BUCKET: ${self:service}-book-covers-bucket-${self:provider.stage}
-    FRONTEND_URL: ${env:FRONTEND_URL, 'http://localhost:3000'} # ? When deployed to cloudfront ?
+    FRONTEND_URL: ${env:FRONTEND_URL, 'http://localhost:3000'} # ! Change When deployed to cloudfront ?
     CLOUDFRONT_DOMAIN: !GetAtt BookCoversDistribution.DomainName
     COGNITO_USER_POOL_ID: !Ref CognitoUserPool
     COGNITO_CLIENT_ID: !Ref CognitoUserPoolClient
-    COOKIE_DOMAIN: ${env:COOKIE_DOMAIN, 'localhost'} # ? When deployed to cloudfront ?
-    # Add STAGE for runtime secret fetching
+    COOKIE_DOMAIN: ${env:COOKIE_DOMAIN, 'localhost'} # ! Change When deployed to Cloudfront
     STAGE: ${self:provider.stage}
-    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1 # to improve performance and reducing latency of lambdas when calling aws services , effective if using aws sdk v2
     COGNITO_DOMAIN:
       Fn::Sub:
         - "https://${Domain}.auth.${AWS::Region}.amazoncognito.com"
@@ -76,7 +75,7 @@ provider:
           Resource:
             - !GetAtt CognitoUserPool.Arn
 
-        # AWS Secrets Manager permissions (RUNTIME FETCHING)
+        # AWS Secrets Manager permissions
         - Effect: Allow
           Action:
             - secretsmanager:GetSecretValue
@@ -85,7 +84,7 @@ provider:
 
 functions:
   # Auth Related Endpoints
-  authCallback:
+  authCallback: # function for getting cookies after OAuth callback
     handler: src/handlers/auth/callback.handler
     description: Handle OAuth callback and create session
     events:
@@ -131,7 +130,7 @@ functions:
             allowCredentials: true
 
   updateUserProfile:
-    handler: src/handlers/users/updateProfile.handler
+    handler: src/handlers/users/updateUserProfile.handler
     description: Update user profile
     events:
       - http:
@@ -232,9 +231,6 @@ resources:
             AttributeDataType: String
             Required: false
             Mutable: true
-        UserAttributeUpdateSettings:
-          AttributesRequireVerificationBeforeUpdate:
-            - email
 
     # Cognito User Pool Client
     CognitoUserPoolClient:
@@ -486,22 +482,3 @@ resources:
               Action:
                 - s3:GetObject # Grants CloudFront permission to read objects in the bucket
               Resource: !Sub "${BookCoversBucket.Arn}/*"
-
-  Outputs:
-    CognitoUserPoolId:
-      Value: !Ref CognitoUserPool
-      Export:
-        Name: ${self:service}-${self:provider.stage}-UserPoolId
-
-    CognitoUserPoolClientId:
-      Value: !Ref CognitoUserPoolClient
-      Export:
-        Name: ${self:service}-${self:provider.stage}-UserPoolClientId
-
-    CognitoUserPoolDomain:
-      Value: !Sub
-        - "https://${Domain}.auth.${Region}.amazoncognito.com"
-        - Domain: bookworm-shop-${self:provider.stage}
-          Region: ${self:provider.region}
-      Export:
-        Name: ${self:service}-${self:provider.stage}-UserPoolDomain

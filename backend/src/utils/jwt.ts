@@ -9,6 +9,7 @@ const client = jwksClient({
   cacheMaxAge: 86400000, // 24 hours
 });
 
+// using jwks-rsa to retrieve signing keys
 function getKey(header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) {
   client.getSigningKey(header.kid, (err, key) => {
     if (err) {
@@ -20,6 +21,7 @@ function getKey(header: jwt.JwtHeader, callback: jwt.SigningKeyCallback) {
   });
 }
 
+// used in authenticate middleware
 export const verifyToken = (token: string): Promise<CognitoUserInfo> => {
   return new Promise((resolve, reject) => {
     jwt.verify(
@@ -41,6 +43,7 @@ export const verifyToken = (token: string): Promise<CognitoUserInfo> => {
   });
 };
 
+// returning the payload without verification -> used in callback lambda for getting user information from the idToken
 export const decodeToken = (token: string): CognitoUserInfo | null => {
   try {
     return jwt.decode(token) as CognitoUserInfo;
