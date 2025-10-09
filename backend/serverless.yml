@@ -9,13 +9,22 @@ provider:
   timeout: 29
   environment:
     BOOKS_TABLE: ${self:service}-books-table-${self:provider.stage}
+    USERS_TABLE: ${self:service}-users-table-${self:provider.stage}
     BOOK_COVERS_BUCKET: ${self:service}-book-covers-bucket-${self:provider.stage}
-    # # ! TODO:
-    FRONTEND_URL: ${env:FRONTEND_URL, 'http://localhost:3000'} # https://d28jacfojat6xy.cloudfront.net
+    FRONTEND_URL: ${env:FRONTEND_URL, 'http://localhost:3000'} # ? When deployed to cloudfront ?
     CLOUDFRONT_DOMAIN: !GetAtt BookCoversDistribution.DomainName
+    COGNITO_USER_POOL_ID: !Ref CognitoUserPool
+    COGNITO_CLIENT_ID: !Ref CognitoUserPoolClient
+    COOKIE_DOMAIN: ${env:COOKIE_DOMAIN, 'localhost'} # ? When deployed to cloudfront ?
+
+    # from SSM Parameter Store
+    GOOGLE_CLIENT_ID: ${ssm:/bookworm/${self:provider.stage}/google-client-id}
+    GOOGLE_CLIENT_SECRET: ${ssm:/bookworm/${self:provider.stage}/google-client-secret~true}
+    ADMIN_EMAIL: ${ssm:/bookworm/${self:provider.stage}/admin-email}
 
   iam:
-    role: # IAM role that gets attached for the Lambda functions
+    # IAM role that gets attached for the Lambda functions
+    role:
       statements:
         - Effect: Allow
           Action:
@@ -43,7 +52,91 @@ provider:
           Resource:
             - !GetAtt BookCoversBucket.Arn
 
+        # Cognito permissions
+        - Effect: Allow
+          Action:
+            - cognito-idp:AdminGetUser
+            - cognito-idp:AdminUpdateUserAttributes
+          Resource:
+            - !GetAtt CognitoUserPool.Arn
+
+        # SSM Parameter Store permissions
+        - Effect: Allow
+          Action:
+            - ssm:GetParameter
+            - ssm:GetParameters
+          Resource:
+            - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/bookworm/${self:provider.stage}/*"
+
+        # KMS permissions for decrypting SecureString parameters
+        - Effect: Allow
+          Action:
+            - kms:Decrypt
+          Resource:
+            - !Sub "arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*"
+          Condition:
+            StringEquals:
+              kms:ViaService:
+                - !Sub "ssm.${AWS::Region}.amazonaws.com"
+
 functions:
+  # Auth Related Endpoints
+  authCallback:
+    handler: src/handlers/auth/callback.handler
+    description: Handle OAuth callback and create session
+    events:
+      - http:
+          method: post
+          path: /auth/callback
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
+
+  authLogout:
+    handler: src/handlers/auth/logout.handler
+    description: Logout and clear session
+    events:
+      - http:
+          method: post
+          path: /auth/logout
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
+
+  authRefresh:
+    handler: src/handlers/auth/refresh.handler
+    description: Refresh access token
+    events:
+      - http:
+          method: post
+          path: /auth/refresh
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
+
+  # User Profile Endpoints
+  getUserProfile:
+    handler: src/handlers/users/getProfile.handler
+    description: Get current user profile
+    events:
+      - http:
+          method: get
+          path: /users/me
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
+
+  updateUserProfile:
+    handler: src/handlers/users/updateProfile.handler
+    description: Update user profile
+    events:
+      - http:
+          method: patch
+          path: /users/me
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
+
   # Book Related Endpoints
   getAllBooks:
     handler: src/handlers/books/getAllBooks.handler
@@ -52,7 +145,9 @@ functions:
       - http:
           method: get
           path: /books
-          cors: true # makes API Gateway return the CORS response headers
+          cors: # makes API Gateway return the CORS response headers
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
 
   getBookById:
     handler: src/handlers/books/getBookById.handler
@@ -61,7 +156,9 @@ functions:
       - http:
           method: get
           path: /books/{id}
-          cors: true
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
 
   createBook:
     handler: src/handlers/books/createBook.handler
@@ -70,7 +167,9 @@ functions:
       - http:
           method: post
           path: /books
-          cors: true # ! TODO: For now cors is true, later change to specific domain
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
 
   deleteBook:
     handler: src/handlers/books/deleteBook.handler
@@ -79,7 +178,9 @@ functions:
       - http:
           method: delete
           path: /books/{id}
-          cors: true # ! TODO: For now cors is true, later change to specific domain
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
 
   generateUploadUrl:
     handler: src/handlers/books/generateUploadUrl.handler
@@ -88,7 +189,9 @@ functions:
       - http:
           method: post
           path: /books/{id}/upload-url
-          cors: true # ! TODO: For now cors is true, later change to specific domain
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
 
   updateBook:
     handler: src/handlers/books/updateBook.handler
@@ -97,10 +200,97 @@ functions:
       - http:
           method: put
           path: /books/{id}
-          cors: true # ! TODO: For now cors is true, later change to specific domain
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
 
 resources:
   Resources:
+    # Cognito User Pool - central user directory
+    CognitoUserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: ${self:service}-user-pool-${self:provider.stage}
+        AutoVerifiedAttributes:
+          - email
+        UsernameAttributes:
+          - email
+        Schema:
+          - Name: email
+            AttributeDataType: String
+            Required: true
+            Mutable: false
+          - Name: name
+            AttributeDataType: String
+            Required: false
+            Mutable: true
+          - Name: picture
+            AttributeDataType: String
+            Required: false
+            Mutable: true
+        UserAttributeUpdateSettings:
+          AttributesRequireVerificationBeforeUpdate:
+            - email
+
+    # Cognito User Pool Client
+    CognitoUserPoolClient:
+      Type: AWS::Cognito::UserPoolClient
+      DependsOn: CognitoIdentityProviderGoogle
+      Properties:
+        ClientName: ${self:service}-client-${self:provider.stage}
+        UserPoolId: !Ref CognitoUserPool
+        GenerateSecret: false
+        ExplicitAuthFlows:
+          - ALLOW_REFRESH_TOKEN_AUTH
+          - ALLOW_USER_SRP_AUTH
+        SupportedIdentityProviders:
+          - Google
+        AllowedOAuthFlows:
+          - code
+        AllowedOAuthScopes:
+          - email
+          - openid
+          - profile
+        AllowedOAuthFlowsUserPoolClient: true
+        CallbackURLs:
+          - ${self:provider.environment.FRONTEND_URL}/auth/callback
+          - http://localhost:3000/auth/callback
+        LogoutURLs:
+          - ${self:provider.environment.FRONTEND_URL}
+          - http://localhost:3000
+        PreventUserExistenceErrors: ENABLED
+        RefreshTokenValidity: 7
+        AccessTokenValidity: 60
+        IdTokenValidity: 60
+        TokenValidityUnits:
+          RefreshToken: days
+          AccessToken: minutes
+          IdToken: minutes
+
+    # Cognito User Pool Domain
+    CognitoUserPoolDomain:
+      Type: AWS::Cognito::UserPoolDomain
+      Properties:
+        Domain: ${self:service}-${self:provider.stage}-${sls:instanceId}
+        UserPoolId: !Ref CognitoUserPool
+
+    # Google Identity Provider
+    CognitoIdentityProviderGoogle:
+      Type: AWS::Cognito::UserPoolIdentityProvider
+      Properties:
+        UserPoolId: !Ref CognitoUserPool
+        ProviderName: Google
+        ProviderType: Google
+        ProviderDetails:
+          client_id: ${ssm:/bookworm/${self:provider.stage}/google-client-id}
+          client_secret: ${ssm:/bookworm/${self:provider.stage}/google-client-secret~true}
+          authorize_scopes: "email openid profile"
+        AttributeMapping:
+          email: email
+          name: name
+          picture: picture
+          username: sub
+
     # DynamoDB Tables
     BooksTable:
       Type: AWS::DynamoDB::Table
@@ -156,6 +346,32 @@ resources:
                 KeyType: HASH
               - AttributeName: price
                 KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.USERS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: email-index
+            KeySchema:
+              - AttributeName: email
+                KeyType: HASH
             Projection:
               ProjectionType: ALL
         Tags:
@@ -263,3 +479,19 @@ resources:
               Action:
                 - s3:GetObject # Grants CloudFront permission to read objects in the bucket
               Resource: !Sub "${BookCoversBucket.Arn}/*"
+
+  Outputs:
+    CognitoUserPoolId:
+      Value: !Ref CognitoUserPool
+      Export:
+        Name: ${self:service}-${self:provider.stage}-UserPoolId
+
+    CognitoUserPoolClientId:
+      Value: !Ref CognitoUserPoolClient
+      Export:
+        Name: ${self:service}-${self:provider.stage}-UserPoolClientId
+
+    CognitoUserPoolDomain:
+      Value: !Sub "https://${CognitoUserPoolDomain}.auth.${self:provider.region}.amazoncognito.com"
+      Export:
+        Name: ${self:service}-${self:provider.stage}-UserPoolDomain
