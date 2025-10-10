@@ -5,7 +5,7 @@ import { handleError } from "../../utils/handleErrors";
 import { logger } from "../../config/logger";
 
 export async function handler(
-  event: APIGatewayProxyEvent
+  _event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   try {
     logger.info("Logout request received");
