@@ -2,12 +2,14 @@ import { configureStore } from "@reduxjs/toolkit";
 import { booksApi } from "./api/booksApi";
 import { adminApi } from "./api/admin/adminApi";
 import { authApi } from "./api/authApi";
+import authReducer from "@/slices/authSlice";
 
 export const store = configureStore({
   reducer: {
     [booksApi.reducerPath]: booksApi.reducer, // auto-generated reducer for bookSlice
     [adminApi.reducerPath]: adminApi.reducer,
     [authApi.reducerPath]: authApi.reducer,
+    auth: authReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware()
