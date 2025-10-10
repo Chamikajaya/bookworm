@@ -13,6 +13,7 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
+    //  reducers allow to dispatch actions from anywhere in the app to directly change the auth state
     setUser: (state, action: PayloadAction<User | null>) => {
       state.user = action.payload;
       state.isAuthenticated = !!action.payload;
@@ -37,7 +38,7 @@ const authSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addMatcher(
-        authApi.endpoints.getUserProfile.matchFulfilled,
+        authApi.endpoints.getUserProfile.matchFulfilled, // if user has a valid session
         (state, { payload }) => {
           state.user = payload.user;
           state.isAuthenticated = true;
@@ -46,6 +47,7 @@ const authSlice = createSlice({
         }
       )
       .addMatcher(authApi.endpoints.getUserProfile.matchRejected, (state) => {
+        // when user does not have a valid session
         state.user = null;
         state.isAuthenticated = false;
         state.isLoading = false;

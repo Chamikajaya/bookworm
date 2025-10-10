@@ -51,9 +51,10 @@ export const authApi = createApi({
 
     // update user profile
     updateUserProfile: builder.mutation<{ user: User }, UpdateProfileInput>({
-      query: () => ({
+      query: (body) => ({
         url: "users/me",
         method: "PATCH",
+        body,
       }),
       invalidatesTags: ["User"],
     }),
