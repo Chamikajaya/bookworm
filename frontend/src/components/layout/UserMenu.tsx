@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { User, LayoutDashboard, Shield, LogOut } from "lucide-react";
 import type { User as UserType } from "@/types/authTypes";
 import { useLogoutMutation } from "@/api/authApi";
+import { getInitials } from "@/lib/utils";
 
 interface UserMenuProps {
   user: UserType;
@@ -30,15 +31,6 @@ export const UserMenu = ({ user }: UserMenuProps) => {
     } catch (error) {
       toast.error("Failed to logout");
     }
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
   };
 
   return (

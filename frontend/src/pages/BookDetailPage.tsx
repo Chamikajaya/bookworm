@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import placeholder from "@/assets/book-placeholder.png";
+import { Header } from "@/components/layout/Header";
 
 export const BookDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -52,36 +53,32 @@ export const BookDetailPage = () => {
   if (error || !book) {
     return (
       <div className="min-h-screen bg-background">
-        <header className="border-b">
-          <div className="container mx-auto px-4 py-4">
-            <Button variant="ghost" onClick={handleBackClick}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-          </div>
-        </header>
-        <main className="container mx-auto px-4 py-8">
-          <Alert variant="destructive">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <Button variant="ghost" onClick={() => navigate("/")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back
+          </Button>
+          <Alert variant="destructive" className="mt-6">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>
               Failed to load book details. Please try again later.
             </AlertDescription>
           </Alert>
-        </main>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Button variant="ghost" onClick={handleBackClick}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Books
-          </Button>
-        </div>
-      </header>
+      <Header />
+      <div className="container mx-auto px-4 py-4">
+        <Button variant="ghost" onClick={handleBackClick}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Books
+        </Button>
+      </div>
 
       <main className="container mx-auto px-4 py-8">
         <div className="grid md:grid-cols-2 gap-8">
