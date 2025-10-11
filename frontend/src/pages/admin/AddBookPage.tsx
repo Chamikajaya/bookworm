@@ -17,9 +17,12 @@ import {
   useUploadToS3Mutation,
   useUpdateBookImageMutation,
 } from "@/api/admin/adminApi";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { Header } from "@/components/layout/Header";
 
 export const AddBook = () => {
   const navigate = useNavigate();
+  const { isLoading: authLoading } = useRequireAuth("ADMIN");
   const [currentStep, setCurrentStep] = useState(1);
   const [createdBookId, setCreatedBookId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -98,20 +101,21 @@ export const AddBook = () => {
     }
   };
 
+  if (authLoading) return null;
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <Button
-            variant="ghost"
-            onClick={() => navigate("/admin/dashboard")}
-            disabled={isSubmitting}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
-        </div>
-      </header>
+      <Header />
+      <div className="container mx-auto px-4 py-8">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/admin/dashboard")}
+          className="mb-6"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Dashboard
+        </Button>
+      </div>
 
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         <Card>
