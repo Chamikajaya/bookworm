@@ -8,12 +8,21 @@ export const useRequireAuth = (requiredRole?: UserRole) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        navigate("/", { replace: true });
-      } else if (requiredRole === "ADMIN" && user?.role !== "ADMIN") {
-        navigate("/forbidden", { replace: true });
-      }
+    // Wait for loading to complete
+    if (isLoading) {
+      return;
+    }
+
+    // Check authentication
+    if (!isAuthenticated) {
+      navigate("/", { replace: true });
+      return;
+    }
+
+    // Check role requirement
+    if (requiredRole === "ADMIN" && user?.role !== "ADMIN") {
+      navigate("/forbidden", { replace: true });
+      return;
     }
   }, [isAuthenticated, isLoading, user, requiredRole, navigate]);
 

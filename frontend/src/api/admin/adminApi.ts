@@ -10,6 +10,7 @@ export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: fetchBaseQuery({
     baseUrl: API_BASE_URL,
+    credentials: "include",
   }),
   tagTypes: ["Books"], // admin api will not provide any tags itself, however it needs to know this tag type exists so it can invalidate tags provided by other API slices (like the booksApi).
   endpoints: (builder) => ({

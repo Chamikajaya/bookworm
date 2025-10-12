@@ -1,22 +1,26 @@
 import { configureStore } from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query";
+import { authApi } from "./api/authApi";
 import { booksApi } from "./api/booksApi";
 import { adminApi } from "./api/admin/adminApi";
-import { authApi } from "./api/authApi";
-import authReducer from "@/slices/authSlice";
+import authReducer from "./slices/authSlice";
 
 export const store = configureStore({
   reducer: {
-    [booksApi.reducerPath]: booksApi.reducer, // auto-generated reducer for bookSlice
-    [adminApi.reducerPath]: adminApi.reducer,
-    [authApi.reducerPath]: authApi.reducer,
     auth: authReducer,
+    [authApi.reducerPath]: authApi.reducer,
+    [booksApi.reducerPath]: booksApi.reducer,
+    [adminApi.reducerPath]: adminApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware()
-      .concat(booksApi.middleware)
-      .concat(adminApi.middleware)
-      .concat(authApi.middleware),
+    getDefaultMiddleware().concat(
+      authApi.middleware,
+      booksApi.middleware,
+      adminApi.middleware
+    ),
 });
+
+setupListeners(store.dispatch);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

@@ -1,18 +1,19 @@
-import { use, useEffect } from "react";
 import { AppRouter } from "./router";
 import { Toaster } from "sonner";
 import { useGetUserProfileQuery } from "./api/authApi";
+import { Spinner } from "./components/ui/spinner";
 
 function App() {
-  // Initialize auth state on app load
+  // Fetch user profile on app mount
+  const { isLoading } = useGetUserProfileQuery();
 
-  // ! TODO: Returning null on loading state in components ? simply return null or a loading spinner ?
-
-  const { refetch } = useGetUserProfileQuery();
-
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Spinner className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <>

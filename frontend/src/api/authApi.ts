@@ -6,14 +6,13 @@ export const authApi = createApi({
   reducerPath: "authApi",
   baseQuery: fetchBaseQuery({
     baseUrl: API_BASE_URL,
-    credentials: "include", // include cookies
+    credentials: "include",
   }),
   tagTypes: ["User"],
   endpoints: (builder) => ({
-    // get id, access and refresh tokens
     handleCallback: builder.mutation<
-      { user: User; redirectTo: string }, // redirectTo is the pageurl = depends on user role
-      { code: string; redirectUrl: string }
+      { data: { user: User; redirectTo: string }; message: string },
+      { code: string; redirectUri: string }
     >({
       query: (data) => ({
         url: "/auth/callback",
@@ -23,7 +22,6 @@ export const authApi = createApi({
       invalidatesTags: ["User"],
     }),
 
-    // logout
     logout: builder.mutation<void, void>({
       query: () => ({
         url: "/auth/logout",
@@ -32,7 +30,6 @@ export const authApi = createApi({
       invalidatesTags: ["User"],
     }),
 
-    // refresh access / id token
     refreshToken: builder.mutation<void, void>({
       query: () => ({
         url: "/auth/refresh",
@@ -40,8 +37,10 @@ export const authApi = createApi({
       }),
     }),
 
-    // get current user profile
-    getUserProfile: builder.query<{ user: User }, void>({
+    getUserProfile: builder.query<
+      { data: { user: User }; message: string },
+      void
+    >({
       query: () => ({
         url: "users/me",
         method: "GET",
@@ -49,8 +48,10 @@ export const authApi = createApi({
       providesTags: ["User"],
     }),
 
-    // update user profile
-    updateUserProfile: builder.mutation<{ user: User }, UpdateProfileInput>({
+    updateUserProfile: builder.mutation<
+      { data: { user: User }; message: string },
+      UpdateProfileInput
+    >({
       query: (body) => ({
         url: "users/me",
         method: "PATCH",

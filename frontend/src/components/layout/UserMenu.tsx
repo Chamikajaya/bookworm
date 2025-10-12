@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useDispatch } from "react-redux";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { User, LayoutDashboard, Shield, LogOut } from "lucide-react";
 import type { User as UserType } from "@/types/authTypes";
 import { useLogoutMutation } from "@/api/authApi";
+import { clearAuth } from "@/slices/authSlice";
 import { getInitials } from "@/lib/utils";
 
 interface UserMenuProps {
@@ -21,15 +23,19 @@ interface UserMenuProps {
 
 export const UserMenu = ({ user }: UserMenuProps) => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [logout, { isLoading }] = useLogoutMutation();
 
   const handleLogout = async () => {
     try {
       await logout().unwrap();
+      dispatch(clearAuth());
       toast.success("Logged out successfully");
       navigate("/");
     } catch (error) {
       toast.error("Failed to logout");
+      dispatch(clearAuth());
+      navigate("/");
     }
   };
 
@@ -53,16 +59,18 @@ export const UserMenu = ({ user }: UserMenuProps) => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {user.role === "ADMIN" && (
+        {user.role === "ADMIN" ? (
           <DropdownMenuItem onClick={() => navigate("/admin/dashboard")}>
             <Shield className="mr-2 h-4 w-4" />
             Admin Dashboard
           </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem onClick={() => navigate("/dashboard")}>
+            <LayoutDashboard className="mr-2 h-4 w-4" />
+            Dashboard
+          </DropdownMenuItem>
         )}
-        <DropdownMenuItem onClick={() => navigate("/dashboard")}>
-          <LayoutDashboard className="mr-2 h-4 w-4" />
-          Dashboard
-        </DropdownMenuItem>
+
         <DropdownMenuItem onClick={() => navigate("/me")}>
           <User className="mr-2 h-4 w-4" />
           My Profile

@@ -1,12 +1,10 @@
 import { serialize, parse, SerializeOptions } from "cookie";
 
-// ! TODO: If cookie is not sent from frontend check COOKIE_OPTIONS config such as secure , sameSite, domain etc.
 const COOKIE_OPTIONS: SerializeOptions = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
+  httpOnly: true, // to prevent cookie from being accessed by JavaScript
+  secure: true, // browser will only send the cookie over HTTPS
+  sameSite: "none", // Allow cross-site cookie sending
   path: "/",
-  domain: process.env.COOKIE_DOMAIN,
   maxAge: 7 * 24 * 60 * 60, // 7 days
 };
 
