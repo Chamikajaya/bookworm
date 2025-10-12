@@ -12,3 +12,5 @@ Books 13-24: Only 6 contain "the" → Page 2 returns 6 items
 Books 25-36: None contain "the" → Page 3 returns 0 items
 
 ### Need to implement refresh token behaviour - interceptor
+
+### Chat Feature --> Ability to send attachments
