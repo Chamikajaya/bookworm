@@ -7,6 +7,8 @@ provider:
   stage: ${opt:stage, 'dev'}
   memorySize: 512
   timeout: 29
+  websocketsApiName: ${self:service}-websocket-api-${self:provider.stage}
+  websocketsApiRouteSelectionExpression: $request.body.action
   environment:
     BOOKS_TABLE: ${self:service}-books-table-${self:provider.stage}
     USERS_TABLE: ${self:service}-users-table-${self:provider.stage}
@@ -17,6 +19,7 @@ provider:
     COGNITO_CLIENT_ID: !Ref CognitoUserPoolClient
     STAGE: ${self:provider.stage}
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1 # to improve performance and reducing latency of lambdas when calling aws services , effective if using aws sdk v2
+    WEBSOCKET_ENDPOINT: !Sub "https://${WebsocketsApi}.execute-api.${AWS::Region}.amazonaws.com/${self:provider.stage}"
     COGNITO_DOMAIN:
       Fn::Sub:
         - "https://${Domain}.auth.${AWS::Region}.amazoncognito.com"
@@ -26,7 +29,7 @@ provider:
     # IAM role that gets attached for the Lambda functions
     role:
       statements:
-        # Book Table permissions
+        # DynamoDB Table permissions
         - Effect: Allow
           Action:
             - dynamodb:Query
@@ -38,18 +41,21 @@ provider:
           Resource:
             - !GetAtt BooksTable.Arn
             - !Sub "${BooksTable.Arn}/index/*"
+            - !GetAtt UsersTable.Arn
+            - !Sub "${UsersTable.Arn}/index/*"
+            - !GetAtt ConnectionsTable.Arn
+            - !Sub "${ConnectionsTable.Arn}/index/*"
+            - !GetAtt MessagesTable.Arn
+            - !Sub "${MessagesTable.Arn}/index/*"
+            - !GetAtt ConversationsTable.Arn
+            - !Sub "${ConversationsTable.Arn}/index/*"
 
-        # User Table permissions
+        # API Gateway WebSocket permissions
         - Effect: Allow
           Action:
-            - dynamodb:Query
-            - dynamodb:PutItem
-            - dynamodb:GetItem
-            - dynamodb:UpdateItem
-            - dynamodb:DeleteItem
+            - execute-api:ManageConnections
           Resource:
-            - !GetAtt UsersTable.Arn
-            - !Sub "${UsersTable.Arn}/index/*" # For email-index GSI
+            - !Sub "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${WebsocketsApi}/${self:provider.stage}/*"
 
         # s3 permissions
         - Effect: Allow
@@ -82,6 +88,82 @@ provider:
             - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:bookworm/${self:provider.stage}/*"
 
 functions:
+  # Web Socket Functions
+  wsConnect:
+    handler: src/handlers/websocket/connect.handler
+    events:
+      - websocket:
+          route: $connect
+
+  wsDisconnect:
+    handler: src/handlers/websocket/disconnect.handler
+    events:
+      - websocket:
+          route: $disconnect
+
+  wsSendMessage:
+    handler: src/handlers/websocket/sendMessage.handler
+    events:
+      - websocket:
+          route: sendMessage
+
+  wsDefault:
+    handler: src/handlers/websocket/default.handler
+    events:
+      - websocket:
+          route: $default
+
+  # HTTP Chat Endpoints
+  getConversations:
+    handler: src/handlers/chat/getConversations.handler
+    events:
+      - http:
+          method: get
+          path: /chat/conversations
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            credentials: true
+
+  getConversation:
+    handler: src/handlers/chat/getConversation.handler
+    events:
+      - http:
+          method: get
+          path: /chat/conversations/{id}
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            credentials: true
+
+  getMessages:
+    handler: src/handlers/chat/getMessages.handler
+    events:
+      - http:
+          method: get
+          path: /chat/messages/{conversationId}
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            credentials: true
+
+  markMessageRead:
+    handler: src/handlers/chat/markRead.handler
+    events:
+      - http:
+          method: patch
+          path: /chat/messages/{messageId}/read
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            credentials: true
+
+  getUnreadCount:
+    handler: src/handlers/chat/getUnreadCount.handler
+    events:
+      - http:
+          method: get
+          path: /chat/unread-count
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            credentials: true
+
   # Auth Related Endpoints
   authCallback: # function for getting cookies after OAuth callback
     handler: src/handlers/auth/callback.handler
@@ -208,6 +290,14 @@ functions:
 
 resources:
   Resources:
+    # ? Are we not using the same api gateway
+    WebsocketsApi:
+      Type: AWS::ApiGatewayV2::Api
+      Properties:
+        Name: ${self:provider.websocketsApiName}
+        ProtocolType: WEBSOCKET
+        RouteSelectionExpression: ${self:provider.websocketsApiRouteSelectionExpression}
+
     # Cognito User Pool - central user directory
     CognitoUserPool:
       Type: AWS::Cognito::UserPool
@@ -373,6 +463,105 @@ resources:
             Value: ${self:provider.stage}
           - Key: Service
             Value: ${self:service}
+
+    # DynamoDB Tables for Chat
+    ConnectionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.CONNECTIONS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: connectionId
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: connectionId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: userId-index
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+
+    MessagesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.MESSAGES_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: conversationId
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: S
+          - AttributeName: recipientId
+            AttributeType: S
+          - AttributeName: read
+            AttributeType: S
+        KeySchema:
+          - AttributeName: conversationId
+            KeyType: HASH
+          - AttributeName: timestamp
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+          - IndexName: recipientId-read-index
+            KeySchema:
+              - AttributeName: recipientId
+                KeyType: HASH
+              - AttributeName: read
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+
+    ConversationsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.CONVERSATIONS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: conversationId
+            AttributeType: S
+          - AttributeName: adminId
+            AttributeType: S
+          - AttributeName: updatedAt
+            AttributeType: S
+          - AttributeName: customerId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: conversationId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: adminId-updatedAt-index
+            KeySchema:
+              - AttributeName: adminId
+                KeyType: HASH
+              - AttributeName: updatedAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: customerId-index
+            KeySchema:
+              - AttributeName: customerId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
 
     # S3 Bucket for Book Cover Images
     BookCoversBucket:
