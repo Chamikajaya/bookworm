@@ -11,6 +11,6 @@ Books 1-12: Only 4 contain "the" → Page 1 returns 4 items
 Books 13-24: Only 6 contain "the" → Page 2 returns 6 items
 Books 25-36: None contain "the" → Page 3 returns 0 items
 
-### Need to implement refresh token behaviour - interceptor
+### TODO: Use Query Response's LastEvaluatedKey for pagination instead of lastTimestamp
 
-### Chat Feature --> Ability to send attachments
+### Need to implement refresh token behaviour - interceptor
