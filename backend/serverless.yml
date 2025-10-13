@@ -10,6 +10,9 @@ provider:
   environment:
     BOOKS_TABLE: ${self:service}-books-table-${self:provider.stage}
     USERS_TABLE: ${self:service}-users-table-${self:provider.stage}
+    CART_TABLE: ${self:service}-cart-table-${self:provider.stage}
+    ORDERS_TABLE: ${self:service}-orders-table-${self:provider.stage}
+    ORDER_ITEMS_TABLE: ${self:service}-order-items-table-${self:provider.stage}
     BOOK_COVERS_BUCKET: ${self:service}-book-covers-bucket-${self:provider.stage}
     FRONTEND_URL: ${env:FRONTEND_URL, 'https://localhost:3000'}
     CLOUDFRONT_DOMAIN: !GetAtt BookCoversDistribution.DomainName
@@ -35,21 +38,19 @@ provider:
             - dynamodb:UpdateItem
             - dynamodb:DeleteItem
             - dynamodb:Scan
+            - dynamodb:BatchGetItem
+            - dynamodb:BatchWriteItem
           Resource:
             - !GetAtt BooksTable.Arn
             - !Sub "${BooksTable.Arn}/index/*"
-
-        # User Table permissions
-        - Effect: Allow
-          Action:
-            - dynamodb:Query
-            - dynamodb:PutItem
-            - dynamodb:GetItem
-            - dynamodb:UpdateItem
-            - dynamodb:DeleteItem
-          Resource:
             - !GetAtt UsersTable.Arn
-            - !Sub "${UsersTable.Arn}/index/*" # For email-index GSI
+            - !Sub "${UsersTable.Arn}/index/*"
+            - !GetAtt CartTable.Arn
+            - !Sub "${CartTable.Arn}/index/*"
+            - !GetAtt OrdersTable.Arn
+            - !Sub "${OrdersTable.Arn}/index/*"
+            - !GetAtt OrderItemsTable.Arn
+            - !Sub "${OrderItemsTable.Arn}/index/*"
 
         # s3 permissions
         - Effect: Allow
@@ -205,6 +206,109 @@ functions:
           cors:
             origin: ${self:provider.environment.FRONTEND_URL}
             allowCredentials: true
+
+  # Cart Related Endpoints
+  getCart:
+    handler: src/handlers/cart/getCart.handler
+    description: Get current user's cart
+    events:
+      - http:
+          method: get
+          path: /cart
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
+
+  addToCart:
+    handler: src/handlers/cart/addToCart.handler
+    description: Add item to cart
+    events:
+      - http:
+          method: post
+          path: /cart
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
+
+  updateCartItem:
+    handler: src/handlers/cart/updateCartItem.handler
+    description: Update item quantity in cart
+    events:
+      - http:
+          method: patch
+          path: /cart/{bookId}
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
+
+  removeFromCart:
+    handler: src/handlers/cart/removeFromCart.handler
+    description: Remove item from cart
+    events:
+      - http:
+          method: delete
+          path: /cart/{bookId}
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
+
+  clearCart:
+    handler: src/handlers/cart/clearCart.handler
+    description: Clear the cart
+    events:
+      - http:
+          method: delete
+          path: /cart
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
+
+  # Order Related Endpoints
+  createOrder:
+    handler: src/handlers/orders/createOrder.handler
+    description: Create an order from cart
+    events:
+      - http:
+          method: post
+          path: /orders
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
+
+  getOrders:
+    handler: src/handlers/orders/getOrders.handler
+    description: Get all orders for current user
+    events:
+      - http:
+          method: get
+          path: /orders
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
+
+  getOrderById:
+    handler: src/handlers/orders/getOrderById.handler
+    description: Get order by ID
+    events:
+      - http:
+          method: get
+          path: /orders/{id}
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
+
+  getAllOrders:
+    handler: src/handlers/orders/getAllOrders.handler
+    description: Get all orders - ADMIN
+    events:
+      - http:
+          method: get
+          path: /orders
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
+
+  # ! TODO: processEmailQueue lambda
 
 resources:
   Resources:
@@ -368,6 +472,88 @@ resources:
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    CartTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.CART_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: bookId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: bookId
+            KeyType: RANGE
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    OrdersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.ORDERS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: orderId
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: S
+          - AttributeName: status
+            AttributeType: S
+        KeySchema:
+          - AttributeName: orderId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: userId-createdAt-index
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+          - IndexName: status-createdAt-index
+            KeySchema:
+              - AttributeName: status
+                KeyType: HASH
+              - AttributeName: createdAt
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    OrderItemsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.ORDER_ITEMS_TABLE}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: orderId
+            AttributeType: S
+          - AttributeName: bookId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: orderId
+            KeyType: HASH
+          - AttributeName: bookId
+            KeyType: RANGE
         Tags:
           - Key: Environment
             Value: ${self:provider.stage}

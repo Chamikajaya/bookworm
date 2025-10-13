@@ -1,4 +1,3 @@
-// ! TODO: Need to add the following env variables
 export const cognitoConfig = {
   userPoolId: import.meta.env.VITE_COGNITO_USER_POOL_ID,
   clientId: import.meta.env.VITE_COGNITO_CLIENT_ID,
