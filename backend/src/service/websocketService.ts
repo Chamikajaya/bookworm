@@ -103,11 +103,15 @@ export class WebSocketService {
         await this.deleteConnection(connectionId);
         return false;
       }
-      throw error;
+      throw new WebSocketError(
+        `Failed to send to connection ${connectionId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
     }
   }
 
-  // broadcasting a message to all active connections of a specific user -> user may have multiple active connections (e.g., multiple devices )
+  // broadcasting a message to all active connections of a specific user -> user may have multiple active connections (e.g., multiple devices, syncing read receipts )
   async broadcastToUser(userId: string, data: any): Promise<number> {
     const connections = await this.getConnectionsByUserId(userId);
     let successCount = 0;

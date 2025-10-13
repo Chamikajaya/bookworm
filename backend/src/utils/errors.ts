@@ -53,6 +53,13 @@ export class AuthorizationError extends Error {
   }
 }
 
+export class WebSocketError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "WebSocketError";
+  }
+}
+
 export class InternalServerError extends Error {
   constructor(message: string) {
     super(message);
