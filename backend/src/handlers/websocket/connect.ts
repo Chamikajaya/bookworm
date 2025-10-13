@@ -1,42 +1,26 @@
 import { APIGatewayProxyResult } from "aws-lambda";
 import { WebSocketEvent } from "../../types/chat";
 import { websocketService } from "../../service/websocketService";
-import { verifyToken } from "../../utils/jwt";
 import { logger } from "../../config/logger";
 import { handleError } from "../../utils/handleErrors";
-import { AuthorizationError } from "../../utils/errors";
-import { UserRole } from "../../types/user";
 import { successResponse } from "../../utils/response";
+import { authenticate } from "../../middleware/auth";
 
-export async function connectHandler(
+export async function handler(
   event: WebSocketEvent
 ): Promise<APIGatewayProxyResult> {
   try {
     const connectionId = event.requestContext.connectionId;
-    const token = event.queryStringParameters?.token;
+    const user = await authenticate(event);
 
     logger.info("WebSocket connect request received", { connectionId });
 
-    if (!token) {
-      throw new AuthorizationError("Missing auth token when connecting to WS");
-    }
-
-    const decoded = await verifyToken(token);
-    const userId = decoded.sub;
-    const email = decoded.email;
-    const name = decoded.name;
-
-    const role =
-      email.toLowerCase() === process.env.ADMIN_EMAIL?.toLowerCase()
-        ? UserRole.ADMIN
-        : UserRole.CUSTOMER;
-
     await websocketService.saveConnection({
       connectionId,
-      userId,
-      role,
-      email,
-      name,
+      userId: user.userId,
+      role: user.role,
+      email: user.email,
+      name: user.name,
       connectedAt: String(Date.now()),
       lastActiveAt: String(Date.now()),
     });

@@ -4,6 +4,7 @@ import { parseCookies, COOKIE_NAMES } from "../utils/cookie";
 import { userService } from "../service/userService";
 import { User } from "../types/user";
 import { AuthenticationError } from "../utils/errors";
+import { WebSocketEvent } from "../types/chat";
 
 // extending the APIGatewayProxyEvent to include user information - after the authenticate middleware runs, it would add user info to the event
 export interface AuthenticatedEvent extends APIGatewayProxyEvent {
@@ -12,7 +13,7 @@ export interface AuthenticatedEvent extends APIGatewayProxyEvent {
 }
 
 export const authenticate = async (
-  event: APIGatewayProxyEvent
+  event: APIGatewayProxyEvent | WebSocketEvent
 ): Promise<User> => {
   const cookies = parseCookies(event.headers.Cookie || event.headers.cookie);
   const accessToken = cookies[COOKIE_NAMES.ACCESS_TOKEN];

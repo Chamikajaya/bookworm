@@ -1,3 +1,4 @@
+import { APIGatewayProxyEvent } from "aws-lambda/trigger/api-gateway-proxy";
 import { UserRole } from "./user";
 
 export interface Connection {
@@ -48,8 +49,9 @@ export interface Conversation {
   status: "active" | "closed";
 }
 
-export interface WebSocketEvent {
-  requestContext: {
+export interface WebSocketEvent
+  extends Omit<APIGatewayProxyEvent, "requestContext"> {
+  requestContext: APIGatewayProxyEvent["requestContext"] & {
     // metadata about the ws request
     connectionId: string;
     routeKey: string;
@@ -59,10 +61,6 @@ export interface WebSocketEvent {
       email: string;
       name: string;
     };
-  };
-  body?: string;
-  queryStringParameters?: {
-    token?: string;
   };
 }
 
