@@ -290,7 +290,7 @@ functions:
 
 resources:
   Resources:
-    # ? Are we not using the same api gateway
+    # Provisioning a separate API Gateway WebSocket API for managing ws connections
     WebsocketsApi:
       Type: AWS::ApiGatewayV2::Api
       Properties:
