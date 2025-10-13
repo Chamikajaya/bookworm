@@ -465,7 +465,7 @@ resources:
             Value: ${self:service}
 
     # DynamoDB Tables for Chat
-    ConnectionsTable:
+    ConnectionsTable: # contains volatile connection data for WebSocket connections
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: ${self:provider.environment.CONNECTIONS_TABLE}
@@ -485,7 +485,7 @@ resources:
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
-        TimeToLiveSpecification:
+        TimeToLiveSpecification: # auto clean up stale connections, in case of disconnection failures
           AttributeName: ttl
           Enabled: true
         Tags:
@@ -512,7 +512,7 @@ resources:
           - AttributeName: timestamp
             KeyType: RANGE
         GlobalSecondaryIndexes:
-          - IndexName: recipientId-read-index
+          - IndexName: recipientId-read-index # ! TODO: USE THIS INDEX
             KeySchema:
               - AttributeName: recipientId
                 KeyType: HASH
@@ -520,14 +520,11 @@ resources:
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
-        TimeToLiveSpecification:
-          AttributeName: ttl
-          Enabled: true
         Tags:
           - Key: Environment
             Value: ${self:provider.stage}
 
-    ConversationsTable:
+    ConversationsTable: # contains metadata about conversations, not the actual messages
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: ${self:provider.environment.CONVERSATIONS_TABLE}

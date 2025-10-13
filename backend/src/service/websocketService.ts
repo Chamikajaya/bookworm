@@ -11,7 +11,7 @@ import {
 import { getDynamoDBClient } from "../config/dynamodb";
 import { getApiGatewayClient } from "../config/apiGatewayManagementApiClient";
 import { Connection } from "../types/chat";
-import { DatabaseError } from "../utils/errors";
+import { DatabaseError, WebSocketError } from "../utils/errors";
 
 export class WebSocketService {
   private docClient: DynamoDBDocumentClient;

@@ -90,6 +90,7 @@ export class ChatService {
   }
 
   //   ! TODO: Create dto type for the request body ?
+  //   ! TODO: Need to make this operation atomic
   async createOrUpdateConversation(
     customerId: string,
     customerName: string,
@@ -121,7 +122,7 @@ export class ChatService {
             },
             ExpressionAttributeValues: {
               ":lastMessage": lastMessage,
-              ":updatedAt": Date.now(),
+              ":updatedAt": String(Date.now()),
               ":inc": 1,
             },
             ReturnValues: "ALL_NEW",
@@ -233,6 +234,7 @@ export class ChatService {
     }
   }
 
+  //   ! TODO: Migrate to batchWrite for efficiency
   async markMessagesAsRead(
     conversationId: string,
     recipientId: string
@@ -242,7 +244,7 @@ export class ChatService {
         conversationId,
         recipientId
       );
-      const readAt = Date.now();
+      const readAt = String(Date.now());
 
       for (const message of messages) {
         await this.docClient.send(
@@ -257,7 +259,7 @@ export class ChatService {
               "#read": "read",
             },
             ExpressionAttributeValues: {
-              ":read": "true",
+              ":read": true,
               ":readAt": readAt,
             },
           })
@@ -288,6 +290,7 @@ export class ChatService {
     }
   }
 
+  //   ! TODO: More efficient way to get unread mesages using the GSI created on recipientId + read ?
   async getUnreadMessages(
     conversationId: string,
     recipientId: string
@@ -304,7 +307,7 @@ export class ChatService {
           ExpressionAttributeValues: {
             ":conversationId": conversationId,
             ":recipientId": recipientId,
-            ":read": "false",
+            ":read": false,
           },
         })
       );
