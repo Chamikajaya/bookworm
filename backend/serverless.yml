@@ -20,6 +20,7 @@ provider:
     COGNITO_CLIENT_ID: !Ref CognitoUserPoolClient
     STAGE: ${self:provider.stage}
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1 # to improve performance and reducing latency of lambdas when calling aws services , effective if using aws sdk v2
+    SES_FROM_EMAIL: ${env:SES_FROM_EMAIL, 'noreply@bookworm.com'}
     COGNITO_DOMAIN:
       Fn::Sub:
         - "https://${Domain}.auth.${AWS::Region}.amazoncognito.com"
@@ -81,6 +82,23 @@ provider:
             - secretsmanager:GetSecretValue
           Resource:
             - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:bookworm/${self:provider.stage}/*"
+
+        # SQS permissions
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+            - sqs:GetQueueAttributes
+          Resource:
+            - !GetAtt EmailQueue.Arn
+
+        # SES permissions
+        - Effect: Allow
+          Action:
+            - ses:SendEmail
+            - ses:SendRawEmail
+          Resource: "*"
 
 functions:
   # Auth Related Endpoints
@@ -308,7 +326,15 @@ functions:
             origin: ${self:provider.environment.FRONTEND_URL}
             allowCredentials: true
 
-  # ! TODO: processEmailQueue lambda
+  # Email Processing - SQS
+  processEmailQueue:
+    handler: src/handlers/emails/processEmailQueue.handler
+    description: Process email queue
+    events:
+      - sqs:
+          arn: !GetAtt EmailQueue.Arn
+          batchSize: 10
+          maximumBatchingWindow: 5
 
 resources:
   Resources:
@@ -554,6 +580,35 @@ resources:
             KeyType: HASH
           - AttributeName: bookId
             KeyType: RANGE
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    # SQS Queue for email processing
+    # Standard queue type not FIFO type
+    EmailQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-email-queue-${self:provider.stage}
+        VisibilityTimeout: 300 # 5 minutes -  When a consumer receives a message from an SQS queue, the visibility timeout for that specific message begins. During this period, the message remains in the queue but is made invisible to other consumers.
+        MessageRetentionPeriod: 86400 # 1 day in seconds
+        RedrivePolicy:
+          deadLetterTargetArn: !GetAtt EmailDeadLetterQueue.Arn
+          maxReceiveCount: 3 # if a message fails to process 3 times, it will be sent to the dead letter queue
+        Tags:
+          - Key: Environment
+            Value: ${self:provider.stage}
+          - Key: Service
+            Value: ${self:service}
+
+    # dead letter queue for emails which failed to process
+    EmailDeadLetterQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: ${self:service}-email-dead-letter-queue-${self:provider.stage}
+        MessageRetentionPeriod: 1209600 # 14 days in seconds
         Tags:
           - Key: Environment
             Value: ${self:provider.stage}
