@@ -1,7 +1,7 @@
 import { UserRole } from "./user";
 
 export interface Connection {
-  connectionId: string;
+  connectionId: string; // unique identifier for the WebSocket connection provided by API Gateway
   userId: string;
   role: UserRole;
   email: string;
@@ -26,6 +26,7 @@ export interface Message {
 }
 
 export interface Conversation {
+  // represents a chat-thread
   conversationId: string;
   customerId: string;
   customerName: string;
@@ -49,6 +50,7 @@ export interface Conversation {
 
 export interface WebSocketEvent {
   requestContext: {
+    // metadata about the ws request
     connectionId: string;
     routeKey: string;
     authorizer?: {
@@ -65,6 +67,7 @@ export interface WebSocketEvent {
 }
 
 export interface SendMessagePayload {
+  // payload for sending a message , frontend should conform to this
   action: "sendMessage";
   recipientId: string;
   content: string;

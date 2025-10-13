@@ -538,7 +538,7 @@ resources:
           - AttributeName: adminId
             AttributeType: S
           - AttributeName: updatedAt
-            AttributeType: S
+            AttributeType: "S"
           - AttributeName: customerId
             AttributeType: S
         KeySchema:

@@ -9,7 +9,7 @@ export const getApiGatewayClient = (): ApiGatewayManagementApiClient => {
       throw new Error("WEBSOCKET_ENDPOINT not configured");
     }
     apiGatewayClient = new ApiGatewayManagementApiClient({
-      endpoint: endpoint.replace("wss://", "https://"),
+      endpoint: endpoint.replace("wss://", "https://"), //
     });
   }
   return apiGatewayClient;

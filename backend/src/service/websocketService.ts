@@ -15,7 +15,7 @@ import { DatabaseError } from "../utils/errors";
 
 export class WebSocketService {
   private docClient: DynamoDBDocumentClient;
-  private connectionsTable: string;
+  private connectionsTable: string; // * all active WebSocket connections are stored here
   private apiGatewayClient: ApiGatewayManagementApiClient;
 
   constructor() {
@@ -24,9 +24,10 @@ export class WebSocketService {
     this.connectionsTable = process.env.CONNECTIONS_TABLE!;
   }
 
+  // persists a new ws connection to the ConnectionsTable
   async saveConnection(connection: Connection): Promise<void> {
     try {
-      const ttl = Math.floor(Date.now() / 1000) + 86400; // 24 hours
+      const ttl = Math.floor(Date.now() / 1000) + 86400; // 24 hours -> auto delete after 24 hours of inactivity - for cleaning up stale connections (refer serverless.yml -> ConnectionsTable -> TimeToLiveSpecification)
       await this.docClient.send(
         new PutCommand({
           TableName: this.connectionsTable,
@@ -42,6 +43,7 @@ export class WebSocketService {
     }
   }
 
+  // removes a ws connection from the ConnectionsTable when a user disconnects
   async deleteConnection(connectionId: string): Promise<void> {
     try {
       await this.docClient.send(
@@ -59,6 +61,7 @@ export class WebSocketService {
     }
   }
 
+  // retrieves all active connections for a specific user
   async getConnectionsByUserId(userId: string): Promise<Connection[]> {
     try {
       const result = await this.docClient.send(
@@ -81,10 +84,12 @@ export class WebSocketService {
     }
   }
 
+  /* SENDING MESSAGES OVER WEBSOCKET */
+
+  // sending a message to a specific connection
   async sendToConnection(connectionId: string, data: any): Promise<boolean> {
     try {
-      const client = this.apiGatewayClient;
-      await client.send(
+      await this.apiGatewayClient.send(
         new PostToConnectionCommand({
           ConnectionId: connectionId,
           Data: Buffer.from(JSON.stringify(data)),
@@ -92,6 +97,7 @@ export class WebSocketService {
       );
       return true;
     } catch (error: any) {
+      // 410 === target connection is gone
       if (error.statusCode === 410) {
         // Connection is stale, remove it
         await this.deleteConnection(connectionId);
@@ -101,6 +107,7 @@ export class WebSocketService {
     }
   }
 
+  // broadcasting a message to all active connections of a specific user -> user may have multiple active connections (e.g., multiple devices )
   async broadcastToUser(userId: string, data: any): Promise<number> {
     const connections = await this.getConnectionsByUserId(userId);
     let successCount = 0;
