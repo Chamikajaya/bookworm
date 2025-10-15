@@ -1,6 +1,8 @@
-// ! TODO: Need to verify the email address of the user upon registration, otherwise SES will not allow sending email to unverified addresses in the sandbox mode.
-
-import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import {
+  SESClient,
+  SendEmailCommand,
+  VerifyEmailIdentityCommand,
+} from "@aws-sdk/client-ses";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { EmailMessage } from "../types/email";
 import { logger } from "../config/logger";
@@ -56,6 +58,23 @@ class EmailService {
       logger.error("Failed to send email", error as Error);
       throw new EmailError(
         `Failed to send email: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  // since in sandbox mode SES can send email only to verified addresses, need to verify the email address upon user registration
+  async verifyEmailIdentity(email: string): Promise<void> {
+    try {
+      await this.sesClient.send(
+        new VerifyEmailIdentityCommand({ EmailAddress: email })
+      );
+      logger.info("Verification email sent", { email });
+    } catch (error) {
+      logger.error("Failed to send verification email", { email, error });
+      throw new EmailError(
+        `Failed to send verification email: ${
           error instanceof Error ? error.message : String(error)
         }`
       );

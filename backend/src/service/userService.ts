@@ -10,6 +10,7 @@ import { User, UpdateUserInput, UserRole } from "../types/user";
 import { CognitoUserInfo } from "../types/auth";
 import { DatabaseError, NotFoundError } from "../utils/errors";
 import { getAdminEmail } from "../utils/secrets";
+import { emailService } from "./emailService";
 
 export class UserService {
   private docClient: DynamoDBDocumentClient;
@@ -49,6 +50,8 @@ export class UserService {
           ConditionExpression: "attribute_not_exists(userId)",
         })
       );
+
+      await emailService.verifyEmailIdentity(cognitoUser.email);
 
       return user;
     } catch (error: any) {
