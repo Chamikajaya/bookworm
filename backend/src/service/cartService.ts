@@ -15,6 +15,7 @@ import {
 } from "../types/cart";
 import { bookService } from "./bookService";
 import { DatabaseError, NotFoundError, ValidationError } from "../utils/errors";
+import { Book } from "../types/book";
 
 export class CartService {
   private docClient: DynamoDBDocumentClient;
@@ -25,7 +26,6 @@ export class CartService {
     this.tableName = process.env.CART_TABLE_NAME!;
   }
 
-  //   ! TODO: Need to fix code duplication
   async getCart(userId: string): Promise<CartSummary> {
     try {
       const result = await this.docClient.send(
@@ -58,22 +58,15 @@ export class CartService {
     }
   }
 
+  // * The cart is never explicitly "created" as a separate entity. In this dynamo design, a "cart" is simply the collection of items that share the same userId.
   async addToCart(userId: string, input: AddToCartInput): Promise<CartItem> {
     try {
-      if (input.quantity <= 0) {
-        throw new ValidationError("Quantity must be greater than zero");
-      }
-
-      const book = await bookService.getBookById(input.bookId); // throws NotFoundError
-
-      if (book.stockQuantity < input.quantity) {
-        throw new ValidationError(
-          `Only ${book.stockQuantity} items left in stock`
-        );
-      }
-
-      // checking if the cart item exists already in the cart
       const existingCartItem = await this.getCartItem(userId, input.bookId);
+      // determining the final quantity after addition
+      const newQuantity = existingCartItem
+        ? existingCartItem.quantity + input.quantity
+        : input.quantity;
+      const book = await this.validateCartAction(input.bookId, newQuantity);
 
       const cartItemToAdd: CartItem = {
         userId,
@@ -87,13 +80,6 @@ export class CartService {
         bookAuthor: book.author,
         bookCoverImage: book.coverImageUrl,
       };
-
-      // double check stock if updating existing item
-      if (cartItemToAdd.quantity > book.stockQuantity) {
-        throw new ValidationError(
-          `Only ${book.stockQuantity} items left in stock`
-        );
-      }
 
       await this.docClient.send(
         new PutCommand({
@@ -123,16 +109,7 @@ export class CartService {
       const existingItem = await this.getCartItem(userId, bookId);
       if (!existingItem) throw new NotFoundError("Cart item not found");
 
-      if (input.quantity <= 0)
-        throw new ValidationError("Quantity must be greater than zero");
-
-      const book = await bookService.getBookById(bookId); // throws NotFoundError
-
-      if (input.quantity > book.stockQuantity) {
-        throw new ValidationError(
-          `Only ${book.stockQuantity} items left in stock`
-        );
-      }
+      await this.validateCartAction(bookId, input.quantity);
 
       const result = await this.docClient.send(
         new UpdateCommand({
@@ -178,6 +155,47 @@ export class CartService {
     }
   }
 
+  // can not do delete -> userId = :userId since the cart table has a composite key (userId, bookId)
+  async clearCart(userId: string): Promise<void> {
+    try {
+      const cart = await this.getCart(userId);
+      if (cart.items.length === 0) return;
+
+      const deleteRequests = cart.items.map((item) => ({
+        DeleteRequest: {
+          Key: { userId: item.userId, bookId: item.bookId },
+        },
+      }));
+
+      // DynamoDB BatchWriteItem can handle up to 25 items at a time
+      const DYNAMO_DB_BATCH_WRITE_LIMIT = 25;
+      const batches = [];
+      for (
+        let i = 0;
+        i < deleteRequests.length;
+        i += DYNAMO_DB_BATCH_WRITE_LIMIT
+      ) {
+        batches.push(deleteRequests.slice(i, i + DYNAMO_DB_BATCH_WRITE_LIMIT));
+      }
+
+      for (const batch of batches) {
+        await this.docClient.send(
+          new BatchWriteCommand({
+            RequestItems: {
+              [this.tableName]: batch,
+            },
+          })
+        );
+      }
+    } catch (error) {
+      throw new DatabaseError(
+        `Failed to clear cart: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
   private async getCartItem(
     userId: string,
     bookId: string
@@ -203,5 +221,22 @@ export class CartService {
         }`
       );
     }
+  }
+
+  private async validateCartAction(
+    bookId: string,
+    desiredQuantity: number
+  ): Promise<Book> {
+    if (desiredQuantity <= 0)
+      throw new ValidationError("Quantity must be greater than zero");
+
+    const book = await bookService.getBookById(bookId);
+
+    if (book.stockQuantity < desiredQuantity) {
+      throw new ValidationError(
+        `Only ${book.stockQuantity} items left in stock`
+      );
+    }
+    return book;
   }
 }
