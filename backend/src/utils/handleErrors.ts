@@ -10,6 +10,7 @@ import {
   TokenExchangeError,
   TokenRefreshError,
   AuthorizationError,
+  QueueError,
 } from "./errors";
 import { logger } from "../config/logger";
 
@@ -48,6 +49,10 @@ export const handleError = (
 
   if (error instanceof AuthorizationError) {
     return errorResponse("Authorization Error", 403, error.message);
+  }
+
+  if (error instanceof QueueError) {
+    return errorResponse("Queue Error", 500, error.message);
   }
 
   if (error instanceof InternalServerError) {

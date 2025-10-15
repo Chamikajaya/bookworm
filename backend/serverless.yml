@@ -21,6 +21,7 @@ provider:
     STAGE: ${self:provider.stage}
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1 # to improve performance and reducing latency of lambdas when calling aws services , effective if using aws sdk v2
     SES_FROM_EMAIL: ${env:SES_FROM_EMAIL, 'noreply@bookworm.com'}
+    EMAIL_QUEUE_URL: !Ref EmailQueue
     COGNITO_DOMAIN:
       Fn::Sub:
         - "https://${Domain}.auth.${AWS::Region}.amazoncognito.com"

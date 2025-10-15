@@ -53,6 +53,13 @@ export class AuthorizationError extends Error {
   }
 }
 
+export class QueueError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "QueueError";
+  }
+}
+
 export class InternalServerError extends Error {
   constructor(message: string) {
     super(message);
