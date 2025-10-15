@@ -293,8 +293,19 @@ functions:
             origin: ${self:provider.environment.FRONTEND_URL}
             allowCredentials: true
 
+  updateOrderStatus:
+    handler: src/handlers/orders/updateOrderStatus.handler
+    description: Update order status - ADMIN
+    events:
+      - http:
+          method: patch
+          path: /orders/{orderId}/status
+          cors:
+            origin: ${self:provider.environment.FRONTEND_URL}
+            allowCredentials: true
+
   getOrders:
-    handler: src/handlers/orders/getOrders.handler
+    handler: src/handlers/orders/getOrdersByUser.handler
     description: Get all orders for current user
     events:
       - http:

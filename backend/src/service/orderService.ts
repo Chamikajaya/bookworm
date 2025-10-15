@@ -37,6 +37,8 @@ export class OrderService {
     this.orderItemsTable = process.env.ORDER_ITEMS_TABLE!;
   }
 
+  //   ! TODO: Need to send the email when the order is first placed and when the status is updated
+
   async getOrderById(
     orderId: string,
     userId?: string
@@ -75,7 +77,6 @@ export class OrderService {
     }
   }
 
-  //   ! TODO: Pagination like book service ?
   async getOrdersByUser(userId: string, limit: number = 20): Promise<Order[]> {
     try {
       const result = await this.docClient.send(
@@ -101,7 +102,6 @@ export class OrderService {
     }
   }
 
-  //   ! TODO: Pagination like book service ?
   async getAllOrders(
     status?: OrderStatus,
     limit: number = 50
