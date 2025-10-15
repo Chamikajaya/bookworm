@@ -25,6 +25,7 @@ import {
   ValidationError,
 } from "../utils/errors";
 import { logger } from "../config/logger";
+import { queueService } from "./queueService";
 
 export class OrderService {
   private docClient: DynamoDBDocumentClient;
@@ -36,8 +37,6 @@ export class OrderService {
     this.ordersTable = process.env.ORDERS_TABLE!;
     this.orderItemsTable = process.env.ORDER_ITEMS_TABLE!;
   }
-
-  //   ! TODO: Need to send the email when the order is first placed and when the status is updated
 
   async getOrderById(
     orderId: string,
@@ -213,7 +212,12 @@ export class OrderService {
       // Clear cart
       await cartService.clearCart(userId);
 
-      // ! TODO: Send order confirmation email here
+      // send order confirmation messages to SQS queue
+      await queueService.sendOrderConfirmationToCustomerToQueue(
+        order,
+        orderItems
+      );
+      await queueService.sendOrderConfirmationToAdminToQueue(order, orderItems);
 
       logger.info("Order created successfully", { orderId, userId });
 
@@ -264,7 +268,8 @@ export class OrderService {
 
       const updatedOrder = result.Attributes as Order;
 
-      //   ! TODO: Need to send the email notification here since the order status has changed
+      // send order status update message to SQS queue
+      await queueService.sendOrderStatusUpdateToQueue(updatedOrder);
 
       logger.info("Order status updated", { orderId, status: input.status });
 
