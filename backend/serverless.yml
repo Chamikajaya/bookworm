@@ -1,5 +1,8 @@
 service: bookworm
 
+plugins:
+  - serverless-s3-sync
+
 provider:
   name: aws
   runtime: nodejs20.x
@@ -22,6 +25,7 @@ provider:
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1 # to improve performance and reducing latency of lambdas when calling aws services , effective if using aws sdk v2
     SES_FROM_EMAIL: ${env:SES_FROM_EMAIL, 'noreply@bookworm.com'}
     EMAIL_QUEUE_URL: !Ref EmailQueue
+    EMAIL_TEMPLATE_BUCKET: ${self:service}-email-templates-bucket-${self:provider.stage}
     COGNITO_DOMAIN:
       Fn::Sub:
         - "https://${Domain}.auth.${AWS::Region}.amazoncognito.com"
@@ -63,11 +67,13 @@ provider:
             - s3:HeadObject
           Resource:
             - !Sub "${BookCoversBucket.Arn}/*"
+            - "arn:aws:s3:::${self:custom.s3Sync.bucketName}/*"
         - Effect: Allow
           Action:
             - s3:ListBucket
           Resource:
             - !GetAtt BookCoversBucket.Arn
+            - "arn:aws:s3:::${self:custom.s3Sync.bucketName}/*"
 
         # Cognito permissions
         - Effect: Allow
@@ -100,6 +106,12 @@ provider:
             - ses:SendEmail
             - ses:SendRawEmail
           Resource: "*"
+
+custom:
+  # S3 Sync configuration
+  s3Sync:
+    bucketName: ${self:provider.environment.EMAIL_TEMPLATE_BUCKET}
+    localDir: ./templates
 
 functions:
   # Auth Related Endpoints
