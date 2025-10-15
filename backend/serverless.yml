@@ -1,7 +1,8 @@
 service: bookworm
 
-plugins:
-  - serverless-s3-sync
+package:
+  exclude:
+    - templates/**
 
 provider:
   name: aws
@@ -23,7 +24,7 @@ provider:
     COGNITO_CLIENT_ID: !Ref CognitoUserPoolClient
     STAGE: ${self:provider.stage}
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: 1 # to improve performance and reducing latency of lambdas when calling aws services , effective if using aws sdk v2
-    SES_FROM_EMAIL: ${env:SES_FROM_EMAIL, 'noreply@bookworm.com'}
+    SES_FROM_EMAIL: ${env:SES_FROM_EMAIL, 'chamika@nexvibe.ai'} # ! TODO: Need to verify this email in SES
     EMAIL_QUEUE_URL: !Ref EmailQueue
     EMAIL_TEMPLATE_BUCKET: ${self:service}-email-templates-bucket-${self:provider.stage}
     COGNITO_DOMAIN:
@@ -67,13 +68,13 @@ provider:
             - s3:HeadObject
           Resource:
             - !Sub "${BookCoversBucket.Arn}/*"
-            - "arn:aws:s3:::${self:custom.s3Sync.bucketName}/*"
+            - "arn:aws:s3:::bookworm-email-templates-bucket-dev/*"
         - Effect: Allow
           Action:
             - s3:ListBucket
           Resource:
             - !GetAtt BookCoversBucket.Arn
-            - "arn:aws:s3:::${self:custom.s3Sync.bucketName}/*"
+            - !Sub "arn:aws:s3:::bookworm-email-templates-bucket-dev"
 
         # Cognito permissions
         - Effect: Allow
@@ -106,12 +107,6 @@ provider:
             - ses:SendEmail
             - ses:SendRawEmail
           Resource: "*"
-
-custom:
-  # S3 Sync configuration
-  s3Sync:
-    bucketName: ${self:provider.environment.EMAIL_TEMPLATE_BUCKET}
-    localDir: ./templates
 
 functions:
   # Auth Related Endpoints
@@ -334,7 +329,7 @@ functions:
     events:
       - http:
           method: get
-          path: /orders/{id}
+          path: /orders/{orderId}
           cors:
             origin: ${self:provider.environment.FRONTEND_URL}
             allowCredentials: true
@@ -350,15 +345,17 @@ functions:
             origin: ${self:provider.environment.FRONTEND_URL}
             allowCredentials: true
 
-  # Email Processing - SQS
+  # * Email Processing - SQS
   processEmailQueue:
     handler: src/handlers/emails/processEmailQueue.handler
     description: Process email queue
     events:
       - sqs:
           arn: !GetAtt EmailQueue.Arn
-          batchSize: 10
-          maximumBatchingWindow: 5
+          # * Lambda function will be invoked as soon as the first of the following 2 conditions is met
+          batchSize: 10 # try to collect up to 10 messages before invoking the function
+          maximumBatchingWindow: 5 # After you receive the first message for a new batch, do not wait longer than 5 seconds to invoke Lambda function, even if the batch isn't full yet
+          functionResponseType: ReportBatchItemFailures # if a message fails to process, it will be retried - lambda function will not throw the error itself, but will return the list of failed messages to SQS
 
 resources:
   Resources:

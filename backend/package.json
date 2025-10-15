@@ -14,7 +14,6 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.7.0",
     "@types/uuid": "^10.0.0",
-    "serverless-s3-sync": "^3.4.0",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3"
   },

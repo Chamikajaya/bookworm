@@ -11,6 +11,7 @@ import {
   TokenRefreshError,
   AuthorizationError,
   QueueError,
+  EmailError,
 } from "./errors";
 import { logger } from "../config/logger";
 
@@ -53,6 +54,10 @@ export const handleError = (
 
   if (error instanceof QueueError) {
     return errorResponse("Queue Error", 500, error.message);
+  }
+
+  if (error instanceof EmailError) {
+    return errorResponse("Email Error", 500, error.message);
   }
 
   if (error instanceof InternalServerError) {
