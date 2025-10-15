@@ -240,3 +240,5 @@ export class CartService {
     return book;
   }
 }
+
+export const cartService = new CartService();
