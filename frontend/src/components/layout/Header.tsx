@@ -5,6 +5,7 @@ import { UserMenu } from "./UserMenu";
 import { Button } from "@/components/ui/button";
 import { BookOpen, Menu } from "lucide-react";
 import { useState } from "react";
+import { CartIcon } from "../cart/CartIcon";
 
 export const Header = () => {
   const { user, isAuthenticated, isAdmin } = useAuth();
@@ -35,7 +36,10 @@ export const Header = () => {
           {/* Desktop Auth */}
           <div className="hidden md:flex items-center space-x-4">
             {isAuthenticated && user ? (
-              <UserMenu user={user} />
+              <>
+                <CartIcon />
+                <UserMenu user={user} />
+              </>
             ) : (
               <LoginButton />
             )}
@@ -52,6 +56,7 @@ export const Header = () => {
           </Button>
         </div>
         {/* Mobile Menu */}
+        {/* TODO: Need to add the cart icon to the mobile menu + need to make the mobile menu a different component */}
         {mobileMenuOpen && (
           <div className="md:hidden pb-4 space-y-2">
             <Link to="/" onClick={() => setMobileMenuOpen(false)}>
@@ -75,6 +80,7 @@ export const Header = () => {
                   <p className="text-sm font-medium">{user.name}</p>
                   <p className="text-xs text-muted-foreground">{user.email}</p>
                 </div>
+
                 <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="ghost" className="w-full justify-start">
                     Dashboard

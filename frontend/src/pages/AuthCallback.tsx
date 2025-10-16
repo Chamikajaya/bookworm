@@ -72,9 +72,6 @@ export const AuthCallback = () => {
       <p className="text-lg font-medium">
         {isLoading ? "Completing sign in..." : "Redirecting..."}
       </p>
-      <p className="text-sm text-muted-foreground mt-2">
-        Debug: Auth={isAuthenticated ? "✓" : "✗"} User={user ? "✓" : "✗"}
-      </p>
     </div>
   );
 };

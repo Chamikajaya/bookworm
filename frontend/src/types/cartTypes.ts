@@ -5,7 +5,7 @@ export interface CartItem {
   bookTitle: string;
   bookAuthor: string;
   bookPrice: number;
-  bookImage?: string;
+  bookCoverImage?: string;
   addedAt: number;
 }
 
