@@ -3,6 +3,8 @@ service: bookworm
 package:
   exclude:
     - templates/**
+    - scripts/**
+    - .gitignore
 
 provider:
   name: aws

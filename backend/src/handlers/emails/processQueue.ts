@@ -29,7 +29,7 @@ export async function handler(event: SQSEvent): Promise<SQSBatchResponse> {
           stack: error instanceof Error ? error.stack : undefined,
         });
 
-        // Add to failed items - SQS will retry only this message
+        // *  Add to failed items - SQS will retry only this message
         batchItemFailures.push({
           itemIdentifier: record.messageId,
         });
