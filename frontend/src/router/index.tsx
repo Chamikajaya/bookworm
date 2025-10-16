@@ -8,6 +8,7 @@ import { AdminDashboard } from "@/pages/admin/Dashboard";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { CustomerDashboard } from "@/pages/CustomerDashboard";
 import { AddBook } from "@/pages/admin/AddBookPage";
+import { CartPage } from "@/pages/Cart";
 
 const router = createBrowserRouter([
   {
@@ -21,6 +22,14 @@ const router = createBrowserRouter([
   {
     path: "/auth/callback",
     element: <AuthCallback />,
+  },
+  {
+    path: "/cart",
+    element: (
+      <ProtectedRoute>
+        <CartPage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: "/dashboard",

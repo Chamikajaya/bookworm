@@ -1,4 +1,5 @@
-import { CartItem } from "@/types/cartTypes";
+import { useEffect, useState } from "react";
+import { type CartItem } from "@/types/cartTypes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Minus, Plus, Trash2 } from "lucide-react";
@@ -19,6 +20,22 @@ export const CartItemCard = ({
   isUpdating,
   isRemoving,
 }: CartItemCardProps) => {
+  const [localQty, setLocalQty] = useState(item.quantity);
+
+  useEffect(() => {
+    setLocalQty(item.quantity);
+  }, [item.quantity]);
+
+  // debounce quantity changes to avoid firing an API call on every click
+  useEffect(() => {
+    const id = setTimeout(() => {
+      if (localQty !== item.quantity) {
+        onQuantityChange(item.bookId, localQty);
+      }
+    }, 500);
+    return () => clearTimeout(id);
+  }, [localQty, item.bookId, item.quantity, onQuantityChange]);
+
   return (
     <Card>
       <CardContent className="p-4">
@@ -58,18 +75,16 @@ export const CartItemCard = ({
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => onQuantityChange(item.bookId, item.quantity - 1)}
-                disabled={item.quantity <= 1 || isUpdating}
+                onClick={() => setLocalQty((q) => Math.max(1, q - 1))}
+                disabled={localQty <= 1 || isUpdating}
               >
                 <Minus className="h-4 w-4" />
               </Button>
-              <span className="w-12 text-center font-semibold">
-                {item.quantity}
-              </span>
+              <span className="w-12 text-center font-semibold">{localQty}</span>
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => onQuantityChange(item.bookId, item.quantity + 1)}
+                onClick={() => setLocalQty((q) => q + 1)}
                 disabled={isUpdating}
               >
                 <Plus className="h-4 w-4" />
@@ -77,7 +92,7 @@ export const CartItemCard = ({
             </div>
 
             <p className="font-semibold">
-              ${(item.bookPrice * item.quantity).toFixed(2)}
+              ${(item.bookPrice * localQty).toFixed(2)}
             </p>
           </div>
         </div>

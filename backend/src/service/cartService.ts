@@ -23,7 +23,7 @@ export class CartService {
 
   constructor() {
     this.docClient = getDynamoDBClient();
-    this.tableName = process.env.CART_TABLE_NAME!;
+    this.tableName = process.env.CART_TABLE!;
   }
 
   async getCart(userId: string): Promise<CartSummary> {

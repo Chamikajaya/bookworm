@@ -1,5 +1,7 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useGetBookByIdQuery } from "@/api/booksApi";
+import { useAddToCartMutation } from "@/api/cartApi";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,12 +10,16 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, AlertCircle } from "lucide-react";
 import placeholder from "@/assets/book-placeholder.png";
 import { Header } from "@/components/layout/Header";
+import { toast } from "sonner";
+import { Spinner } from "@/components/ui/spinner";
 
 export const BookDetailPage = () => {
   const { id } = useParams<{ id: string }>();
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { data: book, isLoading, error } = useGetBookByIdQuery(id!);
+  const [addToCart, { isLoading: addingToCart }] = useAddToCartMutation();
 
   // Get the previous path from location state, or default to root
   const previousPath = (location.state as { from?: string })?.from || "/";
@@ -25,6 +31,20 @@ export const BookDetailPage = () => {
       navigate(-1);
     } else {
       navigate(previousPath);
+    }
+  };
+
+  const handleAddToCart = async () => {
+    if (!isAuthenticated) {
+      toast.error("Please login to add items to cart");
+      return;
+    }
+
+    try {
+      await addToCart({ bookId: id!, quantity: 1 }).unwrap();
+      toast.success("Added to cart!");
+    } catch (error: any) {
+      toast.error(error?.data?.message || "Failed to add to cart");
     }
   };
 
@@ -167,9 +187,17 @@ export const BookDetailPage = () => {
                 <Button
                   className="w-full"
                   size="lg"
-                  disabled={book.stockQuantity === 0}
+                  disabled={book.stockQuantity === 0 || addingToCart}
+                  onClick={handleAddToCart}
                 >
-                  Add to Cart
+                  {addingToCart ? (
+                    <>
+                      <Spinner className="mr-2 h-4 w-4 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    "Add to Cart"
+                  )}
                 </Button>
               </CardContent>
             </Card>
