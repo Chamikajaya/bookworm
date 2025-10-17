@@ -7,7 +7,6 @@ import type {
 } from "@/types/orderTypes";
 import { API_BASE_URL } from "@/constants/constants";
 
-// ! TODO: If error encounters , try with transformResponse 😊😊😊
 export const ordersApi = createApi({
   reducerPath: "ordersApi",
   baseQuery: fetchBaseQuery({
@@ -22,17 +21,20 @@ export const ordersApi = createApi({
         method: "POST",
         body: data,
       }),
+      transformResponse: (response: any) => response?.data, // unwrap wrapper
       invalidatesTags: ["Orders"],
     }),
 
     // get all orders for the logged-in user
     getOrders: builder.query<{ orders: Order[] }, void>({
       query: () => "/orders",
+      transformResponse: (response: any) => response?.data,
       providesTags: ["Orders"],
     }),
 
     getOrderById: builder.query<OrderWithItems, string>({
       query: (orderId) => `/orders/${orderId}`,
+      transformResponse: (response: any) => response?.data,
       providesTags: (_result, _error, orderId) => [
         { type: "Order", id: orderId },
       ],
@@ -44,6 +46,7 @@ export const ordersApi = createApi({
         url: "/admin/orders",
         params: status ? { status } : undefined,
       }),
+      transformResponse: (response: any) => response?.data,
       providesTags: ["Orders"],
     }),
 
@@ -56,6 +59,7 @@ export const ordersApi = createApi({
         method: "PATCH",
         body: data,
       }),
+      transformResponse: (response: any) => response?.data,
       invalidatesTags: (_result, _error, { orderId }) => [
         "Orders",
         { type: "Order", id: orderId },

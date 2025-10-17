@@ -9,6 +9,10 @@ import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { CustomerDashboard } from "@/pages/CustomerDashboard";
 import { AddBook } from "@/pages/admin/AddBookPage";
 import { CartPage } from "@/pages/Cart";
+import { CheckoutPage } from "@/pages/Checkout";
+import { Orders } from "@/pages/OrdersPage";
+import { OrderDetail } from "@/pages/OrderDetail";
+import { AdminOrders } from "@/pages/admin/AdminOrders";
 
 const router = createBrowserRouter([
   {
@@ -32,10 +36,34 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: "/checkout",
+    element: (
+      <ProtectedRoute>
+        <CheckoutPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: "/dashboard",
     element: (
       <ProtectedRoute>
         <CustomerDashboard />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/orders",
+    element: (
+      <ProtectedRoute>
+        <Orders />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/orders/:orderId",
+    element: (
+      <ProtectedRoute>
+        <OrderDetail />
       </ProtectedRoute>
     ),
   },
@@ -60,6 +88,14 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute requireAdmin>
         <AddBook />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/orders",
+    element: (
+      <ProtectedRoute requireAdmin>
+        <AdminOrders />
       </ProtectedRoute>
     ),
   },

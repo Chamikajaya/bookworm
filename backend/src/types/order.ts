@@ -12,8 +12,8 @@ export interface Order {
   status: OrderStatus;
   totalAmount: number;
   shippingAddress: ShippingAddress;
-  createdAt: number;
-  updatedAt: number;
+  createdAt: string;
+  updatedAt: string;
   statusHistory: StatusHistoryEntry[];
 }
 
@@ -41,7 +41,7 @@ export interface OrderItem {
 
 export interface StatusHistoryEntry {
   status: OrderStatus;
-  timestamp: number;
+  timestamp: string;
   note?: string;
 }
 

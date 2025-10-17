@@ -35,12 +35,15 @@ export const CheckoutPage = () => {
     },
   });
 
+  // ! TODO: Cart should be auto cleared after order creation is successful
   const onSubmit = async (data: ShippingFormData) => {
     try {
       const result = await createOrder({ shippingAddress: data }).unwrap();
+      console.log("Order created successfully", result);
       toast.success("Order placed successfully!");
-      navigate(`/orders/${result.order.orderId}`);
+      navigate(`/orders/${result.order.orderId}`); // ! TODO: Is targeting the orderid correctly ? transform ?
     } catch (error: any) {
+      console.error("Failed to create order", error);
       toast.error(error?.data?.message || "Failed to place order");
     }
   };

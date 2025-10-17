@@ -114,7 +114,8 @@ export class OrderService {
         new QueryCommand({
           TableName: this.ordersTable,
           IndexName: "status-createdAt-index",
-          KeyConditionExpression: "status = :status",
+          KeyConditionExpression: "#status = :status",
+          ExpressionAttributeNames: { "#status": "status" },
           ExpressionAttributeValues: expressionAttValues,
           Limit: limit,
           ScanIndexForward: false, // Most recent first
@@ -145,7 +146,7 @@ export class OrderService {
       }
 
       const orderId = uuidv4();
-      const timestamp = Date.now();
+      const timestamp = new Date().toISOString();
 
       // Create order
       const order: Order = {
@@ -239,7 +240,7 @@ export class OrderService {
     try {
       const { order } = await this.getOrderById(orderId);
 
-      const timestamp = Date.now();
+      const timestamp = new Date().toISOString();
       const newHistoryEntry: StatusHistoryEntry = {
         status: input.status,
         timestamp,

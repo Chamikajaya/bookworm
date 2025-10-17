@@ -8,15 +8,6 @@ export const useAuth = () => {
     skip: isAuthenticated, // will only run if not authenticated
   });
 
-  useEffect(() => {
-    console.log("🔵 useAuth state:", {
-      user,
-      isAuthenticated,
-      isLoading,
-      isFetching,
-    });
-  }, [user, isAuthenticated, isLoading, isFetching]);
-
   return {
     user,
     isAuthenticated,

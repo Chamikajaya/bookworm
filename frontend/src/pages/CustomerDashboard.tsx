@@ -1,6 +1,7 @@
 import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { Header } from "@/components/layout/Header";
 
+// ! TODO: Need to display stats -> link to /orders, /profile, etc.
 export const CustomerDashboard = () => {
   const { user, isLoading } = useRequireAuth();
 
