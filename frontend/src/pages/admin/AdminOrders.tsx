@@ -40,7 +40,6 @@ import { useRequireAuth } from "@/hooks/useRequireAuth";
 import { statusColors } from "@/constants/constants";
 import { Spinner } from "@/components/ui/spinner";
 
-// ! TODO: Need to break this down + add admin dashboard stats + link this
 export const AdminOrders = () => {
   const { isLoading: authLoading } = useRequireAuth("ADMIN");
   const [activeTab, setActiveTab] = useState<string>("all");
@@ -93,12 +92,6 @@ export const AdminOrders = () => {
   }
 
   const orders = data?.orders || [];
-  const stats = {
-    total: orders.length,
-    pending: orders.filter((o) => o.status === "PENDING").length,
-    processing: orders.filter((o) => o.status === "PROCESSING").length,
-    shipped: orders.filter((o) => o.status === "SHIPPED").length,
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,56 +103,6 @@ export const AdminOrders = () => {
           <p className="text-muted-foreground">
             Manage and track customer orders
           </p>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Orders
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Pending
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-yellow-600">
-                {stats.pending}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Processing
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">
-                {stats.processing}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Shipped
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">
-                {stats.shipped}
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Orders Table */}
