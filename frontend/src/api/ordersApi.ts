@@ -27,7 +27,7 @@ export const ordersApi = createApi({
 
     // get all orders for the logged-in user
     getOrders: builder.query<{ orders: Order[] }, void>({
-      query: () => "/orders",
+      query: () => "/orders/me",
       transformResponse: (response: any) => response?.data,
       providesTags: ["Orders"],
     }),

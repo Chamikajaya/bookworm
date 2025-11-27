@@ -172,7 +172,6 @@ export const AdminOrders = () => {
                   <TabsTrigger value="pending">Pending</TabsTrigger>
                   <TabsTrigger value="processing">Processing</TabsTrigger>
                   <TabsTrigger value="shipped">Shipped</TabsTrigger>
-                  <TabsTrigger value="delivered">Delivered</TabsTrigger>
                 </TabsList>
               </div>
 
@@ -279,8 +278,6 @@ export const AdminOrders = () => {
                     <SelectItem value="PENDING">Pending</SelectItem>
                     <SelectItem value="PROCESSING">Processing</SelectItem>
                     <SelectItem value="SHIPPED">Shipped</SelectItem>
-                    <SelectItem value="DELIVERED">Delivered</SelectItem>
-                    <SelectItem value="CANCELLED">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

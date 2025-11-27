@@ -320,7 +320,7 @@ functions:
     events:
       - http:
           method: get
-          path: /orders
+          path: /orders/me
           cors:
             origin: ${self:provider.environment.FRONTEND_URL}
             allowCredentials: true
@@ -342,7 +342,7 @@ functions:
     events:
       - http:
           method: get
-          path: /orders
+          path: /admin/orders
           cors:
             origin: ${self:provider.environment.FRONTEND_URL}
             allowCredentials: true
