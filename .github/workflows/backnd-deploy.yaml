@@ -1,0 +1,87 @@
+name: Deploy Serverless Backend - Bookworm
+
+on:
+  # push: # Trigger on pushes to main and dev branches
+  #   branches:
+  #     - main
+  #     - dev
+  #   paths:
+  #     - "backend/**" # Only trigger if backend files change
+  # pull_request: # Trigger on PRs to main and dev branches
+  #   branches:
+  #     - main
+  #     - dev
+  #   paths:
+  #     - "backend/**" # Only trigger if backend files change
+  workflow_dispatch: # Manual trigger
+    inputs:
+      stage:
+        description: "Deployment stage"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prod
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Run TypeScript compilation check
+        working-directory: ./backend
+        run: npx tsc --noEmit
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Install Serverless Framework
+        run: npm install -g serverless
+
+      - name: Determine deployment stage
+        id: stage
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "STAGE=${{ github.event.inputs.stage }}" >> $GITHUB_ENV
+          elif [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "STAGE=prod" >> $GITHUB_ENV
+          else
+            echo "STAGE=dev" >> $GITHUB_ENV
+          fi
+
+      - name: Deploy to AWS
+        working-directory: ./backend
+        env:
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+          SES_FROM_EMAIL: ${{ secrets.SES_FROM_EMAIL }}
+        run: |
+          serverless deploy --stage ${{ env.STAGE }} --region us-east-1 --verbose
+
+      - name: Display deployment info
+        working-directory: ./backend
+        run: |
+          echo "Deployment completed for stage: ${{ env.STAGE }}"
+          serverless info --stage ${{ env.STAGE }} --region us-east-1
