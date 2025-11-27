@@ -1,6 +1,5 @@
 import { useAppSelector } from "@/hooks/hooks";
 import { useGetUserProfileQuery } from "@/api/authApi";
-import { useEffect } from "react";
 
 export const useAuth = () => {
   const { user, isAuthenticated } = useAppSelector((state) => state.auth);

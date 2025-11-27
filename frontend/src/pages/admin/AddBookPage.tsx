@@ -33,7 +33,7 @@ export const AddBook = () => {
       title: "",
       author: "",
       description: "",
-      language: "English",
+      language: "English" as string,
     },
   });
 

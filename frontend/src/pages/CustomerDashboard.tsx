@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useGetOrdersQuery } from "@/api/ordersApi";
-import { useAppSelector } from "@/hooks/hooks";
 import {
   ShoppingBag,
   Package,
