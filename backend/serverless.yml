@@ -20,7 +20,7 @@ provider:
     ORDERS_TABLE: ${self:service}-orders-table-${self:provider.stage}
     ORDER_ITEMS_TABLE: ${self:service}-order-items-table-${self:provider.stage}
     BOOK_COVERS_BUCKET: ${self:service}-book-covers-bucket-${self:provider.stage}
-    FRONTEND_URL: ${env:FRONTEND_URL, 'https://localhost:3000'}
+    FRONTEND_URL: ${env:FRONTEND_URL, 'https://d28jacfojat6xy.cloudfront.net'}
     CLOUDFRONT_DOMAIN: !GetAtt BookCoversDistribution.DomainName
     COGNITO_USER_POOL_ID: !Ref CognitoUserPool
     COGNITO_CLIENT_ID: !Ref CognitoUserPoolClient

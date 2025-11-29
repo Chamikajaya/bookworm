@@ -11,7 +11,7 @@ on:
 env:
   AWS_REGION: us-east-1
   S3_BUCKET: bookworm-store
-  CLOUDFRONT_DISTRIBUTION_ID: E2Y0J2V4R5LL91
+  CLOUDFRONT_DISTRIBUTION_ID: E1CZLVFHY9R3BI
   CLOUDFRONT_URL: https://d28jacfojat6xy.cloudfront.net
 
 jobs:
@@ -63,7 +63,7 @@ jobs:
 
           aws s3 cp ./dist/index.html s3://${{ env.S3_BUCKET }}/index.html \
             --cache-control "max-age=0,no-cache,no-store,must-revalidate" \
-            --content-type "text/html"
+            --content-[type "text/html"
 
       - name: Invalidate CloudFront cache
         run: |

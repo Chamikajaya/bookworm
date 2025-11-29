@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "upload-s3": "aws s3 sync ./dist s3://bookworm-store",
-    "invalidate-cloudfront": "aws cloudfront create-invalidation --distribution-id E2Y0J2V4R5LL91 --paths '/*'",
+    "invalidate-cloudfront": "aws cloudfront create-invalidation --distribution-id E1CZLVFHY9R3BI --paths '/*'",
     "deploy": "npm run build && npm run upload-s3 && npm run invalidate-cloudfront"
   },
   "dependencies": {
