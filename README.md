@@ -568,8 +568,8 @@ async getTemplate(name: string) {
 
 ![Order Receiving mail to admin](./images/admin-mail-confirmation.png)
 
-[Order Status Change to processing](./images/order-processing-confirm-mail.png)
-[Order Status Change to shipped](./images/order-shipping.png)
+![Order Status Change to processing](./images/order-processing-confirm-mail.png)
+![Order Status Change to shipped](./images/order-shipping.png)
 
 ---
 
