@@ -1,4 +1,4 @@
-# 📚 Bookworm - Serverless Bookstore Backend
+# 📚 Bookworm - Serverless Bookstore 
 
 A modern, cloud-native bookstore platform built on AWS serverless architecture. This backend provides a complete e-commerce solution with user authentication, book management, shopping cart, order processing, and automated email notifications.
 
